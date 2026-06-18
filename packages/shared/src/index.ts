@@ -8,6 +8,8 @@ export * from './enums/payment.enum';
 export * from './enums/sexe.enum';
 export * from './enums/lit.enum';
 export * from './enums/rendez-vous.enum';
+export * from './enums/prescription.enum';
+export * from './enums/laboratoire-imagerie.enum';
 export * from './types/api-response';
 export * from './types/jwt-payload';
 export * from './types/plan';
