@@ -51,14 +51,20 @@ export class UsersService {
     return user;
   }
 
-  async create(dto: CreateUserDto): Promise<UserEntity> {
+  /**
+   * `skipLimitCheck` : réservé au bootstrap du tout premier compte ADMIN_ETABLISSEMENT lors de
+   * l'inscription (RegistrationService, Phase 4) — à ce moment, aucun abonnement n'existe encore,
+   * `assertWithinLimit` échouerait systématiquement. Ne jamais l'utiliser pour des créations
+   * ultérieures de personnel, qui doivent rester soumises à la limite du forfait.
+   */
+  async create(dto: CreateUserDto, options: { skipLimitCheck?: boolean } = {}): Promise<UserEntity> {
     const existing = await this.usersRepository.findOne({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('Un utilisateur avec cet email existe déjà.');
     }
 
     // Limite dynamique du forfait (prompt maître §8) — uniquement le personnel interne, pas les patients.
-    if (dto.scope === Scope.ETABLISSEMENT && dto.etablissementId) {
+    if (dto.scope === Scope.ETABLISSEMENT && dto.etablissementId && !options.skipLimitCheck) {
       await this.subscriptionsService.assertWithinLimit(dto.etablissementId, 'maxUtilisateurs');
     }
 

@@ -14,7 +14,7 @@ export class EtablissementsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async create(dto: CreateEtablissementDto, actingUserId: string): Promise<EtablissementEntity> {
+  async create(dto: CreateEtablissementDto, actingUserId: string | null): Promise<EtablissementEntity> {
     const etablissement = await this.repository.save(this.repository.create(dto));
 
     await this.auditService.log({
@@ -70,6 +70,11 @@ export class EtablissementsService {
   /** Renseigné par SubscriptionsService après création/migration d'un abonnement. */
   async setAbonnementActif(id: string, subscriptionId: string): Promise<void> {
     await this.repository.update(id, { abonnementActifId: subscriptionId });
+  }
+
+  /** Renseigné par RegistrationService une fois le compte ADMIN_ETABLISSEMENT créé (prompt maître §10.1). */
+  async setAdmin(id: string, adminId: string): Promise<void> {
+    await this.repository.update(id, { adminId });
   }
 
   /** Maintient etablissement.usage en phase avec la réalité (ex. après création d'un utilisateur). */

@@ -6,7 +6,9 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true — nécessaire pour vérifier la signature HMAC des webhooks de paiement
+  // sur le corps brut exact (voir PaymentsController.webhook / SandboxPaymentGateway).
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const config = app.get(ConfigService);
 
   app.use(helmet());

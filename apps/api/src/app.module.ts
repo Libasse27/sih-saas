@@ -8,6 +8,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EtablissementsModule } from './modules/etablissements/etablissements.module';
 import { HealthController } from './modules/health/health.controller';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { UsersModule } from './modules/users/users.module';
@@ -25,6 +26,7 @@ import { SharedModule } from './shared/shared.module';
     EtablissementsModule,
     PlansModule,
     SubscriptionsModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
 })

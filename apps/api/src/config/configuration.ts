@@ -32,4 +32,18 @@ export default () => ({
     loginMaxTentatives: parseInt(process.env.LOGIN_MAX_TENTATIVES ?? '5', 10),
     loginVerrouillageMinutes: parseInt(process.env.LOGIN_VERROUILLAGE_MINUTES ?? '15', 10),
   },
+
+  mail: {
+    transport: process.env.MAIL_TRANSPORT ?? 'dev', // 'dev' = jsonTransport (aucun envoi réseau), 'smtp' = réel
+    from: process.env.MAIL_FROM ?? 'no-reply@sih-saas.local',
+    host: process.env.MAIL_HOST,
+    port: parseInt(process.env.MAIL_PORT ?? '587', 10),
+    user: process.env.MAIL_USER,
+    password: process.env.MAIL_PASSWORD,
+  },
+
+  payments: {
+    // Seule la passerelle SANDBOX est câblée pour l'instant — voir docs/phase-0/plan-de-phases.md Phase 4.
+    sandboxWebhookSecret: process.env.PAYMENT_SANDBOX_WEBHOOK_SECRET ?? 'sandbox-dev-secret-change-me',
+  },
 });

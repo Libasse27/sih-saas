@@ -7,8 +7,10 @@ import { ResponseMessage } from '../../../shared/decorators/response-message.dec
 import { JwtPayload } from '@sih-saas/shared';
 import { UsersService } from '../../users/application/users.service';
 import { AuthService } from '../application/auth.service';
+import { RegistrationService } from '../application/registration.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @ApiTags('Authentification')
 @Controller('auth')
@@ -16,7 +18,15 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly registrationService: RegistrationService,
   ) {}
+
+  @Public()
+  @Post('register')
+  @ResponseMessage('Établissement créé. Connectez-vous pour continuer.')
+  register(@Body() dto: RegisterDto) {
+    return this.registrationService.register(dto);
+  }
 
   @Public()
   @Post('login')
