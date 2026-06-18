@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Permission, Role, Scope } from '@sih-saas/shared';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
+import { EtablissementsService } from '../../etablissements/application/etablissements.service';
+import { SubscriptionsService } from '../../subscriptions/application/subscriptions.service';
 import { resolveEffectivePermissions } from '../domain/permission-resolver';
 import { RolePermissionEntity } from '../infrastructure/entities/role-permission.entity';
 import { UserPermissionEntity } from '../infrastructure/entities/user-permission.entity';
@@ -29,6 +31,8 @@ export class UsersService {
     @InjectRepository(UserPermissionEntity)
     private readonly userPermissionsRepository: Repository<UserPermissionEntity>,
     private readonly config: ConfigService,
+    private readonly subscriptionsService: SubscriptionsService,
+    private readonly etablissementsService: EtablissementsService,
   ) {}
 
   async findByEmailForAuth(email: string): Promise<UserEntity | null> {
@@ -53,6 +57,11 @@ export class UsersService {
       throw new ConflictException('Un utilisateur avec cet email existe déjà.');
     }
 
+    // Limite dynamique du forfait (prompt maître §8) — uniquement le personnel interne, pas les patients.
+    if (dto.scope === Scope.ETABLISSEMENT && dto.etablissementId) {
+      await this.subscriptionsService.assertWithinLimit(dto.etablissementId, 'maxUtilisateurs');
+    }
+
     const rounds = this.config.get<number>('security.bcryptRounds') ?? 12;
     const passwordHash = await bcrypt.hash(dto.password, rounds);
 
@@ -70,6 +79,10 @@ export class UsersService {
 
     if (dto.roles?.length) {
       await this.assignRoles(user.id, dto.roles);
+    }
+
+    if (dto.scope === Scope.ETABLISSEMENT && dto.etablissementId) {
+      await this.etablissementsService.incrementUsage(dto.etablissementId, 'utilisateurs', 1);
     }
 
     return this.findById(user.id);

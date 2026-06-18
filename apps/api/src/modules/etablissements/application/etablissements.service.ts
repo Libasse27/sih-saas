@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EtablissementStatut } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
-import { EtablissementEntity } from '../infrastructure/entities/etablissement.entity';
+import { EtablissementEntity, EtablissementUsage } from '../infrastructure/entities/etablissement.entity';
 import { CreateEtablissementDto } from '../presentation/dto/create-etablissement.dto';
 
 @Injectable()
@@ -46,7 +46,11 @@ export class EtablissementsService {
     return etablissement;
   }
 
-  async updateStatut(id: string, statut: EtablissementStatut, actingUserId: string): Promise<EtablissementEntity> {
+  async updateStatut(
+    id: string,
+    statut: EtablissementStatut,
+    actingUserId: string | null,
+  ): Promise<EtablissementEntity> {
     const etablissement = await this.findById(id);
     etablissement.statut = statut;
     await this.repository.save(etablissement);
@@ -61,5 +65,20 @@ export class EtablissementsService {
     });
 
     return etablissement;
+  }
+
+  /** Renseigné par SubscriptionsService après création/migration d'un abonnement. */
+  async setAbonnementActif(id: string, subscriptionId: string): Promise<void> {
+    await this.repository.update(id, { abonnementActifId: subscriptionId });
+  }
+
+  /** Maintient etablissement.usage en phase avec la réalité (ex. après création d'un utilisateur). */
+  async incrementUsage(id: string, champ: keyof EtablissementUsage, delta: number): Promise<void> {
+    const etablissement = await this.findById(id);
+    etablissement.usage = {
+      ...etablissement.usage,
+      [champ]: Math.max(0, etablissement.usage[champ] + delta),
+    };
+    await this.repository.save(etablissement);
   }
 }

@@ -65,6 +65,10 @@ export class EtablissementEntity {
   @Column({ type: 'enum', enum: EtablissementStatut, default: EtablissementStatut.EN_ATTENTE_PAIEMENT })
   statut: EtablissementStatut;
 
+  // Renseigné par SubscriptionsService à la souscription (Phase 3) — voir modele-de-donnees.md §2.1.
+  @Column({ type: 'uuid', nullable: true })
+  abonnementActifId: string | null;
+
   @Column({ type: 'jsonb', default: () => `'{"utilisateurs":0,"lits":0,"stockageMo":0}'` })
   usage: EtablissementUsage;
 

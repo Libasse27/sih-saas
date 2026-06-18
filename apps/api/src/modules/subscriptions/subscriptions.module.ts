@@ -1,0 +1,18 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuditModule } from '../audit/audit.module';
+import { EtablissementsModule } from '../etablissements/etablissements.module';
+import { PlansModule } from '../plans/plans.module';
+import { SubscriptionsService } from './application/subscriptions.service';
+import { SubscriptionLifecycleService } from './application/subscription-lifecycle.service';
+import { SubscriptionEntity } from './infrastructure/entities/subscription.entity';
+import { EtablissementSubscriptionsController } from './presentation/etablissement-subscriptions.controller';
+import { SubscriptionsController } from './presentation/subscriptions.controller';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([SubscriptionEntity]), PlansModule, EtablissementsModule, AuditModule],
+  controllers: [SubscriptionsController, EtablissementSubscriptionsController],
+  providers: [SubscriptionsService, SubscriptionLifecycleService],
+  exports: [SubscriptionsService],
+})
+export class SubscriptionsModule {}
