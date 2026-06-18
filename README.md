@@ -32,8 +32,15 @@ API disponible sur `http://localhost:3000/api`, documentation Swagger sur `http:
 ## Tests
 
 ```bash
-pnpm test:api
+pnpm test:api               # tests unitaires (mocks, pas de DB requise)
+pnpm --filter @sih-saas/api test:integration   # tests d'isolation multi-tenant réels (Postgres + Mongo démarrés)
 ```
+
+> Important : le backend se connecte à PostgreSQL avec le rôle **`sih_saas_app`** (non-superuser),
+> créé automatiquement à la première initialisation du conteneur via
+> `infrastructure/docker/postgres-init/01-create-app-role.sql`. Ne jamais faire connecter l'app
+> avec le rôle bootstrap `sih_saas` (superuser) — PostgreSQL ignore toujours les policies RLS pour
+> un superuser, quel que soit `FORCE ROW LEVEL SECURITY`. Voir docs/phase-0/strategie-isolation.md §2.
 
 ## Générer une nouvelle migration
 
