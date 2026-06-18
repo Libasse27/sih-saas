@@ -12,6 +12,8 @@ import { PaymentsController } from './presentation/payments.controller';
   imports: [TypeOrmModule.forFeature([PaymentEntity]), PlansModule, ProvisioningModule, AuditModule],
   controllers: [PaymentsController],
   providers: [PaymentsService, SandboxPaymentGateway],
-  exports: [PaymentsService],
+  // SandboxPaymentGateway exporté pour être réutilisé par FacturationPatientModule (flux soins,
+  // infra partagée mais modèles/endpoints strictement séparés — prompt maître §15).
+  exports: [PaymentsService, SandboxPaymentGateway],
 })
 export class PaymentsModule {}

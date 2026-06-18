@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConsultationsModule } from './modules/consultations/consultations.module';
 import { DossierMedicalModule } from './modules/dossier-medical/dossier-medical.module';
 import { EtablissementsModule } from './modules/etablissements/etablissements.module';
+import { FacturationPatientModule } from './modules/facturation-patient/facturation-patient.module';
 import { HealthController } from './modules/health/health.controller';
 import { ImagerieModule } from './modules/imagerie/imagerie.module';
 import { LaboratoireModule } from './modules/laboratoire/laboratoire.module';
@@ -47,6 +48,7 @@ import { SharedModule } from './shared/shared.module';
     PharmacieModule,
     LaboratoireModule,
     ImagerieModule,
+    FacturationPatientModule,
   ],
   controllers: [HealthController],
 })
