@@ -1,0 +1,5 @@
+export enum Scope {
+  PLATFORM = 'PLATFORM',
+  ETABLISSEMENT = 'ETABLISSEMENT',
+  PATIENT = 'PATIENT',
+}

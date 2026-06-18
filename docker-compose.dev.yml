@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sih-saas-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sih_saas
+      POSTGRES_PASSWORD: sih_saas_dev_password
+      POSTGRES_DB: sih_saas
+    ports:
+      - "5433:5432"
+    volumes:
+      - sih_saas_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sih_saas -d sih_saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongodb:
+    image: mongo:7
+    container_name: sih-saas-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sih_saas
+      MONGO_INITDB_ROOT_PASSWORD: sih_saas_dev_password
+      MONGO_INITDB_DATABASE: sih_saas
+    ports:
+      - "27018:27017"
+    volumes:
+      - sih_saas_mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: sih-saas-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - sih_saas_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  sih_saas_postgres_data:
+  sih_saas_mongodb_data:
+  sih_saas_redis_data:

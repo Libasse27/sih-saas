@@ -1,0 +1,6 @@
+{
+  "name": "@sih-saas/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Console desktop Electron + Vue (super-admin / établissement) — implémentation prévue en Phase 9"
+}

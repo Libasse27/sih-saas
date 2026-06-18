@@ -1,0 +1,18 @@
+{
+  "name": "sih-saas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plateforme SaaS Multi-Établissements de Gestion Hospitalière (SIH SaaS)",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev:api": "pnpm --filter @sih-saas/api start:dev",
+    "build:api": "pnpm --filter @sih-saas/api build",
+    "test:api": "pnpm --filter @sih-saas/api test",
+    "build:shared": "pnpm --filter @sih-saas/shared build",
+    "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
