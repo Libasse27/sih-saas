@@ -122,6 +122,7 @@ export class AuthService {
       etablissementId: user.etablissementId,
       roles,
       permissions,
+      serviceId: user.serviceId,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {

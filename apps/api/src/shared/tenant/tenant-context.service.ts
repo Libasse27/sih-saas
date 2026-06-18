@@ -53,6 +53,22 @@ export class TenantContextService {
   }
 
   /**
+   * Enregistre un callback exécuté uniquement après le commit réussi de la transaction RLS en
+   * cours (par TenantRlsInterceptor) — jamais en cas de rollback. Sert aux effets de bord non
+   * transactionnels qui ne doivent refléter que des écritures réellement persistées (ex. émission
+   * Socket.io « lit occupé »). Hors contexte de requête (pas de transaction ouverte), exécute
+   * immédiatement : c'est le cas pour le scope PLATFORM, qui n'ouvre pas de transaction RLS.
+   */
+  afterCommit(callback: () => void): void {
+    const store = this.getStore();
+    if (!store?.queryRunner) {
+      callback();
+      return;
+    }
+    store.afterCommitCallbacks.push(callback);
+  }
+
+  /**
    * EntityManager à utiliser par les futurs repositories de modules cliniques (Phase 5+) :
    * celui de la transaction RLS en cours s'il y en a une, sinon le manager par défaut.
    */

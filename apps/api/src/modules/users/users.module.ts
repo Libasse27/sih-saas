@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuditModule } from '../audit/audit.module';
 import { EtablissementsModule } from '../etablissements/etablissements.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { UsersService } from './application/users.service';
@@ -14,6 +15,7 @@ import { UsersController } from './presentation/users.controller';
     TypeOrmModule.forFeature([UserEntity, UserRoleEntity, RolePermissionEntity, UserPermissionEntity]),
     SubscriptionsModule,
     EtablissementsModule,
+    AuditModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

@@ -9,4 +9,7 @@ export interface JwtPayload {
   etablissementId: string | null;
   roles: Role[];
   permissions: Permission[];
+  // Service principal d'affectation du personnel (Phase 6) — lu par CareContextGuard pour le lien
+  // de soin « affectation au service ». Toujours null pour PLATFORM/PATIENT.
+  serviceId: string | null;
 }

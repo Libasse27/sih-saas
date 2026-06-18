@@ -53,6 +53,29 @@ describe('TenantContextService', () => {
     expect(() => service.set({ etablissementId: 'x' })).toThrow();
   });
 
+  it('afterCommit() exécute immédiatement hors transaction RLS (ex. scope PLATFORM)', () => {
+    const service = buildService();
+    const callback = jest.fn();
+
+    service.run(() => {
+      service.afterCommit(callback);
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('afterCommit() met en file le callback tant que la transaction RLS est ouverte', () => {
+    const service = buildService();
+    const callback = jest.fn();
+
+    service.run(() => {
+      service.set({ queryRunner: {} as never });
+      service.afterCommit(callback);
+      expect(callback).not.toHaveBeenCalled();
+      expect(service.getStore()?.afterCommitCallbacks).toEqual([callback]);
+    });
+  });
+
   it('les getters renvoient des valeurs neutres hors contexte', () => {
     const service = buildService();
     expect(service.getUserId()).toBeNull();

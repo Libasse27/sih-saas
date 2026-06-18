@@ -22,14 +22,28 @@ export class TenantRlsInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      switchMap((result) => from(queryRunner.commitTransaction()).pipe(map(() => result))),
+      switchMap((result) =>
+        from(queryRunner.commitTransaction()).pipe(
+          map(() => {
+            this.runAfterCommitCallbacks();
+            return result;
+          }),
+        ),
+      ),
       catchError((error) =>
         from(queryRunner.rollbackTransaction()).pipe(switchMap(() => throwError(() => error))),
       ),
       finalize(() => {
-        this.tenantContext.set({ queryRunner: null });
+        this.tenantContext.set({ queryRunner: null, afterCommitCallbacks: [] });
         void queryRunner.release();
       }),
     );
+  }
+
+  private runAfterCommitCallbacks(): void {
+    const callbacks = this.tenantContext.getStore()?.afterCommitCallbacks ?? [];
+    for (const callback of callbacks) {
+      callback();
+    }
   }
 }

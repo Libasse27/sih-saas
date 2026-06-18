@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -8,6 +8,7 @@ import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { PaginationQueryDto } from '../../../shared/dto/pagination-query.dto';
 import { UsersService } from '../application/users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateAffectationDto } from './dto/update-affectation.dto';
 
 @ApiTags('Utilisateurs')
 @ApiBearerAuth()
@@ -40,5 +41,17 @@ export class UsersController {
   @ResponseMessage('Utilisateur récupéré.')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findById(id);
+  }
+
+  @Patch(':id/affectation')
+  @Scopes(Scope.ETABLISSEMENT)
+  @RequirePermissions(Permission.UTILISATEUR_MANAGE)
+  @ResponseMessage('Affectation mise à jour.')
+  setAffectation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAffectationDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.usersService.setAffectation(id, dto.serviceId ?? null, currentUser.sub);
   }
 }

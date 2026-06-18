@@ -1,0 +1,71 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { AuditService } from '../../audit/application/audit.service';
+import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
+import { ServiceEntity } from '../infrastructure/entities/service.entity';
+import { CreateServiceDto } from '../presentation/dto/create-service.dto';
+import { UpdateServiceDto } from '../presentation/dto/update-service.dto';
+import { PaginatedResult } from './paginated-result';
+
+/** `clinic.services` est protégée par RLS — voir patients.service.ts pour la convention tenantContext.getManager(). */
+@Injectable()
+export class ServicesService {
+  constructor(
+    private readonly tenantContext: TenantContextService,
+    private readonly auditService: AuditService,
+  ) {}
+
+  private get repository(): Repository<ServiceEntity> {
+    return this.tenantContext.getManager().getRepository(ServiceEntity);
+  }
+
+  async create(dto: CreateServiceDto, actingUserId: string): Promise<ServiceEntity> {
+    const etablissementId = this.tenantContext.getEtablissementId()!;
+    const service = await this.repository.save(
+      this.repository.create({ ...dto, etablissementId, responsableId: dto.responsableId ?? null }),
+    );
+
+    await this.auditService.log({
+      etablissementId,
+      userId: actingUserId,
+      action: 'service.create',
+      ressource: 'service',
+      ressourceId: service.id,
+    });
+
+    return service;
+  }
+
+  async findAll(page: number, limit: number): Promise<PaginatedResult<ServiceEntity>> {
+    const [items, total] = await this.repository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { nom: 'ASC' },
+    });
+    return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
+  }
+
+  async findById(id: string): Promise<ServiceEntity> {
+    const service = await this.repository.findOne({ where: { id } });
+    if (!service) {
+      throw new NotFoundException('Service introuvable.');
+    }
+    return service;
+  }
+
+  async update(id: string, dto: UpdateServiceDto, actingUserId: string): Promise<ServiceEntity> {
+    const service = await this.findById(id);
+    Object.assign(service, dto);
+    const saved = await this.repository.save(service);
+
+    await this.auditService.log({
+      etablissementId: service.etablissementId,
+      userId: actingUserId,
+      action: 'service.update',
+      ressource: 'service',
+      ressourceId: service.id,
+    });
+
+    return saved;
+  }
+}

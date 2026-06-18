@@ -36,7 +36,7 @@ describe('TenantRlsInterceptor', () => {
 
   it('commit la transaction et libère le queryRunner après une réponse réussie', async () => {
     const queryRunner = buildQueryRunner();
-    const tenantContext = { getStore: () => ({ queryRunner }), set: jest.fn() };
+    const tenantContext = { getStore: () => ({ queryRunner, afterCommitCallbacks: [] }), set: jest.fn() };
     const interceptor = new TenantRlsInterceptor(tenantContext as any);
     let valeurRecue: string | undefined;
 
@@ -49,7 +49,37 @@ describe('TenantRlsInterceptor', () => {
     expect(queryRunner.commitTransaction).toHaveBeenCalled();
     expect(queryRunner.rollbackTransaction).not.toHaveBeenCalled();
     expect(queryRunner.release).toHaveBeenCalled();
-    expect(tenantContext.set).toHaveBeenCalledWith({ queryRunner: null });
+    expect(tenantContext.set).toHaveBeenCalledWith({ queryRunner: null, afterCommitCallbacks: [] });
+  });
+
+  it('exécute les callbacks afterCommit uniquement après le commit réussi', async () => {
+    const queryRunner = buildQueryRunner();
+    const afterCommitCallbacks = [jest.fn(), jest.fn()];
+    const tenantContext = { getStore: () => ({ queryRunner, afterCommitCallbacks }), set: jest.fn() };
+    const interceptor = new TenantRlsInterceptor(tenantContext as any);
+
+    interceptor.intercept({} as ExecutionContext, buildHandler(of('résultat'))).subscribe();
+    await flushMicrotasks();
+
+    expect(afterCommitCallbacks[0]).toHaveBeenCalled();
+    expect(afterCommitCallbacks[1]).toHaveBeenCalled();
+  });
+
+  it("n'exécute jamais les callbacks afterCommit en cas de rollback", async () => {
+    const queryRunner = buildQueryRunner();
+    const afterCommitCallback = jest.fn();
+    const tenantContext = {
+      getStore: () => ({ queryRunner, afterCommitCallbacks: [afterCommitCallback] }),
+      set: jest.fn(),
+    };
+    const interceptor = new TenantRlsInterceptor(tenantContext as any);
+
+    interceptor
+      .intercept({} as ExecutionContext, buildHandler(throwError(() => new Error('Échec métier'))))
+      .subscribe({ error: () => undefined });
+    await flushMicrotasks();
+
+    expect(afterCommitCallback).not.toHaveBeenCalled();
   });
 
   it('rollback la transaction et relaie l’erreur quand le handler échoue', async () => {

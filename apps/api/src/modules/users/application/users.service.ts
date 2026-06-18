@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Permission, Role, Scope } from '@sih-saas/shared';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
+import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
 import { SubscriptionsService } from '../../subscriptions/application/subscriptions.service';
 import { resolveEffectivePermissions } from '../domain/permission-resolver';
@@ -33,6 +34,7 @@ export class UsersService {
     private readonly config: ConfigService,
     private readonly subscriptionsService: SubscriptionsService,
     private readonly etablissementsService: EtablissementsService,
+    private readonly auditService: AuditService,
   ) {}
 
   async findByEmailForAuth(email: string): Promise<UserEntity | null> {
@@ -92,6 +94,29 @@ export class UsersService {
     }
 
     return this.findById(user.id);
+  }
+
+  /**
+   * Service principal d'affectation du personnel (Phase 6) — lu par CareContextGuard pour établir
+   * un lien de soin (« affectation au service où le patient est hospitalisé »,
+   * docs/phase-0/strategie-isolation.md §5). Pas de validation d'existence du service : FK
+   * informelle, même convention que patients.assuranceId.
+   */
+  async setAffectation(id: string, serviceId: string | null, actingUserId: string): Promise<UserEntity> {
+    const user = await this.findById(id);
+    user.serviceId = serviceId;
+    const saved = await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      etablissementId: user.etablissementId,
+      userId: actingUserId,
+      action: 'utilisateur.affectation.update',
+      ressource: 'user',
+      ressourceId: user.id,
+      metadata: { serviceId },
+    });
+
+    return saved;
   }
 
   async assignRoles(userId: string, roles: Role[]): Promise<void> {

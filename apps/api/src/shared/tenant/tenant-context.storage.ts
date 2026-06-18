@@ -18,6 +18,11 @@ export interface TenantContextStore {
   permissions: Permission[];
   /** Transaction Postgres ouverte par TenantRlsInterceptor pour la requête courante (RLS). */
   queryRunner: QueryRunner | null;
+  /**
+   * Callbacks à exécuter une fois la transaction RLS commitée (ex. émission Socket.io après
+   * un changement de statut de lit) — jamais exécutés en cas de rollback. Voir TenantContextService.afterCommit().
+   */
+  afterCommitCallbacks: Array<() => void>;
 }
 
 export function emptyTenantContext(): TenantContextStore {
@@ -28,6 +33,7 @@ export function emptyTenantContext(): TenantContextStore {
     roles: [],
     permissions: [],
     queryRunner: null,
+    afterCommitCallbacks: [],
   };
 }
 

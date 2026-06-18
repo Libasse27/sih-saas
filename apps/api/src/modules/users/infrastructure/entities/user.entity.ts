@@ -25,6 +25,12 @@ export class UserEntity {
   @Column({ type: 'uuid', nullable: true })
   etablissementId: string | null;
 
+  // FK informelle vers clinic.services (Phase 6) — service principal d'affectation du personnel,
+  // utilisé par CareContextGuard pour établir un lien de soin (personnel affecté au service où le
+  // patient est hospitalisé). Sans rapport avec scope=PLATFORM/PATIENT, toujours null pour ceux-ci.
+  @Column({ type: 'uuid', nullable: true })
+  serviceId: string | null;
+
   @Column()
   nom: string;
 
