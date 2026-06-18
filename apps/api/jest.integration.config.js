@@ -4,7 +4,7 @@ module.exports = {
   rootDir: 'src',
   testRegex: '\\.integration\\.spec\\.ts$',
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    '^.+\\.(t|j)s$': ['ts-jest', { isolatedModules: true }],
   },
   testEnvironment: 'node',
   testTimeout: 30000,
