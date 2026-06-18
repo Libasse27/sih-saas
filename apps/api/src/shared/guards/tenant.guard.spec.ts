@@ -16,17 +16,32 @@ describe('TenantGuard', () => {
     return { getAllAndOverride: jest.fn(() => isPublic) } as unknown as Reflector;
   }
 
-  it('laisse passer les routes publiques sans toucher au contexte', () => {
-    const tenantContext = { set: jest.fn() };
-    const guard = new TenantGuard(buildReflector(true), tenantContext as any);
+  function buildDataSource(queryRunner: any) {
+    return { createQueryRunner: jest.fn(() => queryRunner) };
+  }
 
-    expect(guard.canActivate(buildContext(undefined))).toBe(true);
+  function buildQueryRunner() {
+    return {
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      query: jest.fn(),
+    };
+  }
+
+  it('laisse passer les routes publiques sans toucher au contexte', async () => {
+    const tenantContext = { set: jest.fn() };
+    const queryRunner = buildQueryRunner();
+    const guard = new TenantGuard(buildReflector(true), tenantContext as any, buildDataSource(queryRunner) as any);
+
+    await expect(guard.canActivate(buildContext(undefined))).resolves.toBe(true);
     expect(tenantContext.set).not.toHaveBeenCalled();
+    expect(queryRunner.connect).not.toHaveBeenCalled();
   });
 
-  it('rejette un jeton ETABLISSEMENT incohérent (sans etablissementId)', () => {
+  it('rejette un jeton ETABLISSEMENT incohérent (sans etablissementId)', async () => {
     const tenantContext = { set: jest.fn() };
-    const guard = new TenantGuard(buildReflector(false), tenantContext as any);
+    const queryRunner = buildQueryRunner();
+    const guard = new TenantGuard(buildReflector(false), tenantContext as any, buildDataSource(queryRunner) as any);
     const user = {
       sub: 'u1',
       scope: Scope.ETABLISSEMENT,
@@ -35,12 +50,13 @@ describe('TenantGuard', () => {
       permissions: [Permission.DOSSIER_READ],
     };
 
-    expect(() => guard.canActivate(buildContext(user))).toThrow(InternalServerErrorException);
+    await expect(guard.canActivate(buildContext(user))).rejects.toThrow(InternalServerErrorException);
   });
 
-  it('peuple le contexte tenant pour un utilisateur ETABLISSEMENT valide', () => {
+  it('peuple le contexte tenant et ouvre la transaction RLS pour un utilisateur ETABLISSEMENT valide', async () => {
     const tenantContext = { set: jest.fn() };
-    const guard = new TenantGuard(buildReflector(false), tenantContext as any);
+    const queryRunner = buildQueryRunner();
+    const guard = new TenantGuard(buildReflector(false), tenantContext as any, buildDataSource(queryRunner) as any);
     const user = {
       sub: 'u1',
       scope: Scope.ETABLISSEMENT,
@@ -49,7 +65,8 @@ describe('TenantGuard', () => {
       permissions: [Permission.DOSSIER_READ],
     };
 
-    expect(guard.canActivate(buildContext(user))).toBe(true);
+    await expect(guard.canActivate(buildContext(user))).resolves.toBe(true);
+
     expect(tenantContext.set).toHaveBeenCalledWith({
       userId: 'u1',
       scope: Scope.ETABLISSEMENT,
@@ -57,11 +74,17 @@ describe('TenantGuard', () => {
       roles: [Role.MEDECIN],
       permissions: [Permission.DOSSIER_READ],
     });
+    // La transaction RLS doit être ouverte AVANT que tout guard de route (ex. CareContextGuard) ne s'exécute.
+    expect(queryRunner.connect).toHaveBeenCalled();
+    expect(queryRunner.startTransaction).toHaveBeenCalled();
+    expect(queryRunner.query).toHaveBeenCalledWith(expect.stringContaining('set_config'), ['etab-1']);
+    expect(tenantContext.set).toHaveBeenCalledWith({ queryRunner });
   });
 
-  it('un utilisateur PLATFORM (etablissementId=null) est autorisé', () => {
+  it('un utilisateur PLATFORM (etablissementId=null) est autorisé sans ouvrir de transaction RLS', async () => {
     const tenantContext = { set: jest.fn() };
-    const guard = new TenantGuard(buildReflector(false), tenantContext as any);
+    const queryRunner = buildQueryRunner();
+    const guard = new TenantGuard(buildReflector(false), tenantContext as any, buildDataSource(queryRunner) as any);
     const user = {
       sub: 'u1',
       scope: Scope.PLATFORM,
@@ -70,9 +93,10 @@ describe('TenantGuard', () => {
       permissions: [Permission.ETABLISSEMENT_MANAGE],
     };
 
-    expect(guard.canActivate(buildContext(user))).toBe(true);
+    await expect(guard.canActivate(buildContext(user))).resolves.toBe(true);
     expect(tenantContext.set).toHaveBeenCalledWith(
       expect.objectContaining({ scope: Scope.PLATFORM, etablissementId: null }),
     );
+    expect(queryRunner.connect).not.toHaveBeenCalled();
   });
 });

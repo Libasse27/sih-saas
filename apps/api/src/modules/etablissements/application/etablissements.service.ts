@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EtablissementStatut } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { deriverCodeBase } from '../domain/code-generator';
 import { EtablissementEntity, EtablissementUsage } from '../infrastructure/entities/etablissement.entity';
 import { CreateEtablissementDto } from '../presentation/dto/create-etablissement.dto';
 
@@ -15,7 +16,8 @@ export class EtablissementsService {
   ) {}
 
   async create(dto: CreateEtablissementDto, actingUserId: string | null): Promise<EtablissementEntity> {
-    const etablissement = await this.repository.save(this.repository.create(dto));
+    const code = await this.genererCodeUnique(dto.nom);
+    const etablissement = await this.repository.save(this.repository.create({ ...dto, code }));
 
     await this.auditService.log({
       etablissementId: etablissement.id,
@@ -85,5 +87,36 @@ export class EtablissementsService {
       [champ]: Math.max(0, etablissement.usage[champ] + delta),
     };
     await this.repository.save(etablissement);
+  }
+
+  /**
+   * Incrément atomique d'un compteur de numérotation (ex. IDH patient) — une seule requête UPDATE,
+   * le verrou de ligne Postgres pendant la transaction empêche deux créations concurrentes d'obtenir
+   * le même numéro.
+   */
+  async incrementerCompteur(id: string, cle: string): Promise<number> {
+    // TypeORM renvoie [lignes, nombreLignesAffectees] (un tuple) pour une requête UPDATE...RETURNING,
+    // à la différence d'un SELECT classique qui renvoie directement le tableau de lignes.
+    const [lignes] = await this.repository.query(
+      `UPDATE platform.etablissements
+       SET compteurs = jsonb_set(compteurs, $2::text[], (COALESCE((compteurs->>$3)::int, 0) + 1)::text::jsonb)
+       WHERE id = $1
+       RETURNING compteurs->>$3 AS valeur`,
+      [id, `{${cle}}`, cle],
+    );
+    return parseInt(lignes[0].valeur, 10);
+  }
+
+  private async genererCodeUnique(nom: string): Promise<string> {
+    const base = deriverCodeBase(nom);
+    let code = base;
+    let suffixe = 1;
+
+    while (await this.repository.exists({ where: { code } })) {
+      suffixe += 1;
+      code = `${base}${suffixe}`;
+    }
+
+    return code;
   }
 }

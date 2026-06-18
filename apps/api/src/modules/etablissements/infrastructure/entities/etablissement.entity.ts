@@ -14,10 +14,20 @@ export interface EtablissementUsage {
   stockageMo: number;
 }
 
+/** Compteurs de numérotation par établissement (prompt maître §11) — étendu au fil des phases (patient, facture...). */
+export interface EtablissementCompteurs {
+  patient?: number;
+  [cle: string]: number | undefined;
+}
+
 @Entity({ schema: 'platform', name: 'etablissements' })
 export class EtablissementEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  // Court identifiant lisible (ex. "HMS"), utilisé dans la numérotation des dossiers patients (IDH).
+  @Column({ unique: true })
+  code: string;
 
   @Column()
   nom: string;
@@ -71,6 +81,9 @@ export class EtablissementEntity {
 
   @Column({ type: 'jsonb', default: () => `'{"utilisateurs":0,"lits":0,"stockageMo":0}'` })
   usage: EtablissementUsage;
+
+  @Column({ type: 'jsonb', default: () => `'{}'` })
+  compteurs: EtablissementCompteurs;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

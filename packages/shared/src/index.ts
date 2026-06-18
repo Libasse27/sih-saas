@@ -5,6 +5,7 @@ export * from './enums/etablissement.enum';
 export * from './enums/subscription.enum';
 export * from './enums/clinical-module.enum';
 export * from './enums/payment.enum';
+export * from './enums/sexe.enum';
 export * from './types/api-response';
 export * from './types/jwt-payload';
 export * from './types/plan';
