@@ -14,3 +14,4 @@ export * from './enums/facturation-patient.enum';
 export * from './types/api-response';
 export * from './types/jwt-payload';
 export * from './types/plan';
+export * from './types/platform-statistiques';

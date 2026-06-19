@@ -9,6 +9,9 @@
     "build:api": "pnpm --filter @sih-saas/api build",
     "test:api": "pnpm --filter @sih-saas/api test",
     "build:shared": "pnpm --filter @sih-saas/shared build",
+    "dev:desktop": "pnpm --filter @sih-saas/desktop dev",
+    "dev:desktop:electron": "pnpm --filter @sih-saas/desktop dev:electron",
+    "build:desktop": "pnpm --filter @sih-saas/desktop build",
     "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down"
   },

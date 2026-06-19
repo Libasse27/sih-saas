@@ -30,8 +30,9 @@ export class EtablissementsService {
     return etablissement;
   }
 
-  async findAll(page: number, limit: number) {
+  async findAll(page: number, limit: number, statut?: EtablissementStatut) {
     const [items, total] = await this.repository.findAndCount({
+      where: statut ? { statut } : {},
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -105,6 +106,42 @@ export class EtablissementsService {
       [id, `{${cle}}`, cle],
     );
     return parseInt(lignes[0].valeur, 10);
+  }
+
+  /** Lu par SubscriptionsService.getStatistiquesPlateforme() (dashboard super-admin, Phase 9). */
+  async countParStatut(): Promise<Record<EtablissementStatut, number>> {
+    const lignes = await this.repository
+      .createQueryBuilder('etablissement')
+      .select('etablissement.statut', 'statut')
+      .addSelect('COUNT(*)', 'total')
+      .groupBy('etablissement.statut')
+      .getRawMany<{ statut: EtablissementStatut; total: string }>();
+
+    const resultat = Object.fromEntries(
+      Object.values(EtablissementStatut).map((statut) => [statut, 0]),
+    ) as Record<EtablissementStatut, number>;
+
+    for (const ligne of lignes) {
+      resultat[ligne.statut] = parseInt(ligne.total, 10);
+    }
+
+    return resultat;
+  }
+
+  /** Lu par SubscriptionsService.getStatistiquesPlateforme() (dashboard super-admin, Phase 9). */
+  async sommeUsage(): Promise<EtablissementUsage> {
+    const ligne = await this.repository
+      .createQueryBuilder('etablissement')
+      .select(`COALESCE(SUM((etablissement.usage->>'utilisateurs')::int), 0)`, 'utilisateurs')
+      .addSelect(`COALESCE(SUM((etablissement.usage->>'lits')::int), 0)`, 'lits')
+      .addSelect(`COALESCE(SUM((etablissement.usage->>'stockageMo')::int), 0)`, 'stockageMo')
+      .getRawOne<{ utilisateurs: string; lits: string; stockageMo: string }>();
+
+    return {
+      utilisateurs: parseInt(ligne?.utilisateurs ?? '0', 10),
+      lits: parseInt(ligne?.lits ?? '0', 10),
+      stockageMo: parseInt(ligne?.stockageMo ?? '0', 10),
+    };
   }
 
   private async genererCodeUnique(nom: string): Promise<string> {

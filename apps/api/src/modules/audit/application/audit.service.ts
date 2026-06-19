@@ -14,6 +14,14 @@ export interface AuditEntry {
   metadata?: Record<string, unknown>;
 }
 
+export interface PaginatedResult<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 @Injectable()
 export class AuditService {
   constructor(@InjectRepository(AuditLogEntity) private readonly repository: Repository<AuditLogEntity>) {}
@@ -31,5 +39,16 @@ export class AuditService {
         metadata: entry.metadata ?? null,
       }),
     );
+  }
+
+  /** Lecture seule — table append-only, voir audit-log.entity.ts. Console super-admin, Phase 9. */
+  async findAll(page: number, limit: number, etablissementId?: string): Promise<PaginatedResult<AuditLogEntity>> {
+    const [items, total] = await this.repository.findAndCount({
+      where: etablissementId ? { etablissementId } : {},
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+    return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
 }

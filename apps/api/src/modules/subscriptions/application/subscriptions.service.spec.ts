@@ -5,9 +5,15 @@ import { SubscriptionEntity } from '../infrastructure/entities/subscription.enti
 import { SubscriptionsService } from './subscriptions.service';
 
 describe('SubscriptionsService', () => {
-  let repository: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock };
+  let repository: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock; find: jest.Mock };
   let plansService: { findById: jest.Mock };
-  let etablissementsService: { setAbonnementActif: jest.Mock; updateStatut: jest.Mock; findById: jest.Mock };
+  let etablissementsService: {
+    setAbonnementActif: jest.Mock;
+    updateStatut: jest.Mock;
+    findById: jest.Mock;
+    countParStatut: jest.Mock;
+    sommeUsage: jest.Mock;
+  };
   let auditService: { log: jest.Mock };
   let service: SubscriptionsService;
 
@@ -36,12 +42,15 @@ describe('SubscriptionsService', () => {
       findOne: jest.fn(),
       create: jest.fn((entity) => entity),
       save: jest.fn((entity) => entity),
+      find: jest.fn().mockResolvedValue([]),
     };
     plansService = { findById: jest.fn() };
     etablissementsService = {
       setAbonnementActif: jest.fn(),
       updateStatut: jest.fn(),
       findById: jest.fn(),
+      countParStatut: jest.fn().mockResolvedValue({}),
+      sommeUsage: jest.fn().mockResolvedValue({ utilisateurs: 0, lits: 0, stockageMo: 0 }),
     };
     auditService = { log: jest.fn() };
 
@@ -177,6 +186,41 @@ describe('SubscriptionsService', () => {
       repository.findOne.mockResolvedValue(null);
 
       await expect(service.hasModule('etab-1', ClinicalModule.DME)).resolves.toBe(false);
+    });
+  });
+
+  describe('getStatistiquesPlateforme', () => {
+    it('renvoie MRR/ARR nuls sans abonnement actif', async () => {
+      const stats = await service.getStatistiquesPlateforme();
+
+      expect(stats.mrr).toBe(0);
+      expect(stats.arr).toBe(0);
+      expect(stats.abonnementsActifs).toBe(0);
+      expect(stats.devise).toBe('XOF');
+    });
+
+    it('additionne les abonnements mensuels et convertit les annuels en équivalent mensuel', async () => {
+      repository.find.mockResolvedValue([
+        { montant: 100000, periodicite: Periodicite.MENSUEL, statut: SubscriptionStatut.ACTIF },
+        { montant: 1200000, periodicite: Periodicite.ANNUEL, statut: SubscriptionStatut.EN_PERIODE_GRACE },
+      ]);
+
+      const stats = await service.getStatistiquesPlateforme();
+
+      // 100000 (mensuel) + 1200000/12 = 100000 (équivalent mensuel de l'annuel) = 200000
+      expect(stats.mrr).toBe(200000);
+      expect(stats.arr).toBe(2400000);
+      expect(stats.abonnementsActifs).toBe(2);
+    });
+
+    it('relaie les compteurs établissements/usage de EtablissementsService', async () => {
+      etablissementsService.countParStatut.mockResolvedValue({ [EtablissementStatut.ACTIF]: 4 });
+      etablissementsService.sommeUsage.mockResolvedValue({ utilisateurs: 10, lits: 30, stockageMo: 500 });
+
+      const stats = await service.getStatistiquesPlateforme();
+
+      expect(stats.etablissements).toEqual({ [EtablissementStatut.ACTIF]: 4 });
+      expect(stats.usage).toEqual({ utilisateurs: 10, lits: 30, stockageMo: 500 });
     });
   });
 });

@@ -5,9 +5,9 @@ import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
 import { Scopes } from '../../../shared/decorators/scopes.decorator';
-import { PaginationQueryDto } from '../../../shared/dto/pagination-query.dto';
 import { EtablissementsService } from '../application/etablissements.service';
 import { CreateEtablissementDto } from './dto/create-etablissement.dto';
+import { FindEtablissementsQueryDto } from './dto/find-etablissements-query.dto';
 import { UpdateEtablissementStatutDto } from './dto/update-etablissement-statut.dto';
 
 @ApiTags('Établissements (plateforme)')
@@ -27,8 +27,8 @@ export class EtablissementsController {
   @Get()
   @RequirePermissions(Permission.ETABLISSEMENT_MANAGE)
   @ResponseMessage('Liste des établissements.')
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.etablissementsService.findAll(query.page, query.limit);
+  findAll(@Query() query: FindEtablissementsQueryDto) {
+    return this.etablissementsService.findAll(query.page, query.limit, query.statut);
   }
 
   @Get(':id')

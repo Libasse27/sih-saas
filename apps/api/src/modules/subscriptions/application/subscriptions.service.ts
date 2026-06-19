@@ -1,6 +1,13 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ClinicalModule, EtablissementStatut, Periodicite, PlanLimites, SubscriptionStatut } from '@sih-saas/shared';
+import {
+  ClinicalModule,
+  EtablissementStatut,
+  Periodicite,
+  PlanLimites,
+  PlatformStatistiques,
+  SubscriptionStatut,
+} from '@sih-saas/shared';
 import { In, Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
@@ -206,6 +213,37 @@ export class SubscriptionsService {
   async hasModule(etablissementId: string, module: ClinicalModule): Promise<boolean> {
     const subscription = await this.getActiveForEtablissement(etablissementId);
     return subscription?.planSnapshot.modules.includes(module) ?? false;
+  }
+
+  /**
+   * Dashboard super-admin (Phase 9, prompt maître §10.2) : établissements actifs/suspendus/expirés,
+   * MRR/ARR, usage stockage. MRR = Σ équivalent-mensuel des abonnements ACTIF/EN_PERIODE_GRACE
+   * (l'ESSAI ne génère aucun revenu — montant=0 par construction dans subscribe(), exclu malgré tout
+   * pour rester explicite). ARR = MRR×12. Toujours en XOF (plateforme mono-devise).
+   */
+  async getStatistiquesPlateforme(): Promise<PlatformStatistiques> {
+    const [etablissements, usage, abonnementsActifs] = await Promise.all([
+      this.etablissementsService.countParStatut(),
+      this.etablissementsService.sommeUsage(),
+      this.repository.find({
+        where: { statut: In([SubscriptionStatut.ACTIF, SubscriptionStatut.EN_PERIODE_GRACE]) },
+      }),
+    ]);
+
+    const mrr = abonnementsActifs.reduce((total, abonnement) => {
+      const equivalentMensuel =
+        abonnement.periodicite === Periodicite.MENSUEL ? abonnement.montant : Number(abonnement.montant) / 12;
+      return total + Number(equivalentMensuel);
+    }, 0);
+
+    return {
+      etablissements,
+      usage,
+      abonnementsActifs: abonnementsActifs.length,
+      mrr: Math.round(mrr * 100) / 100,
+      arr: Math.round(mrr * 12 * 100) / 100,
+      devise: 'XOF',
+    };
   }
 
   private historiqueEntry(action: string, details?: Record<string, unknown>): SubscriptionHistoriqueEntry {

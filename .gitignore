@@ -12,3 +12,5 @@ coverage/
 *.tsbuildinfo
 pnpm-lock.yaml.bak
 .claude/
+note.txt
+dist-electron/

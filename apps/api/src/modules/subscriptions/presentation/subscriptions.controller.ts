@@ -17,6 +17,13 @@ import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
+  // Déclarée avant ":id" pour que "statistiques" ne soit jamais capturé par le paramètre.
+  @Get('statistiques')
+  @ResponseMessage('Statistiques plateforme.')
+  getStatistiques() {
+    return this.subscriptionsService.getStatistiquesPlateforme();
+  }
+
   @Get(':id')
   @ResponseMessage('Abonnement récupéré.')
   findOne(@Param('id', ParseUUIDPipe) id: string) {

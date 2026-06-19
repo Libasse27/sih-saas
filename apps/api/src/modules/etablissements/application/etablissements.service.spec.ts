@@ -1,10 +1,26 @@
-import { EtablissementType } from '@sih-saas/shared';
+import { EtablissementStatut, EtablissementType } from '@sih-saas/shared';
 import { EtablissementsService } from './etablissements.service';
 
 describe('EtablissementsService', () => {
-  let repository: { create: jest.Mock; save: jest.Mock; exists: jest.Mock; query: jest.Mock };
+  let repository: {
+    create: jest.Mock;
+    save: jest.Mock;
+    exists: jest.Mock;
+    query: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
   let auditService: { log: jest.Mock };
   let service: EtablissementsService;
+
+  function buildQueryBuilder(rawMany: unknown[] = [], rawOne: unknown = null) {
+    const queryBuilder: Record<string, jest.Mock> = {};
+    queryBuilder.select = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.addSelect = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.groupBy = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.getRawMany = jest.fn().mockResolvedValue(rawMany);
+    queryBuilder.getRawOne = jest.fn().mockResolvedValue(rawOne);
+    return queryBuilder;
+  }
 
   beforeEach(() => {
     repository = {
@@ -12,6 +28,7 @@ describe('EtablissementsService', () => {
       save: jest.fn((entity) => ({ id: 'etab-1', ...entity })),
       exists: jest.fn().mockResolvedValue(false),
       query: jest.fn(),
+      createQueryBuilder: jest.fn(() => buildQueryBuilder()),
     };
     auditService = { log: jest.fn() };
     service = new EtablissementsService(repository as any, auditService as any);
@@ -48,6 +65,48 @@ describe('EtablissementsService', () => {
         '{patient}',
         'patient',
       ]);
+    });
+  });
+
+  describe('countParStatut', () => {
+    it('renvoie 0 pour chaque statut sans ligne en base', async () => {
+      const resultat = await service.countParStatut();
+
+      expect(resultat[EtablissementStatut.ACTIF]).toBe(0);
+      expect(resultat[EtablissementStatut.SUSPENDU]).toBe(0);
+      expect(Object.keys(resultat)).toHaveLength(Object.values(EtablissementStatut).length);
+    });
+
+    it('agrège les comptages renvoyés par la base', async () => {
+      repository.createQueryBuilder.mockReturnValue(
+        buildQueryBuilder([
+          { statut: EtablissementStatut.ACTIF, total: '3' },
+          { statut: EtablissementStatut.SUSPENDU, total: '1' },
+        ]),
+      );
+
+      const resultat = await service.countParStatut();
+
+      expect(resultat[EtablissementStatut.ACTIF]).toBe(3);
+      expect(resultat[EtablissementStatut.SUSPENDU]).toBe(1);
+      expect(resultat[EtablissementStatut.ESSAI]).toBe(0);
+    });
+  });
+
+  describe('sommeUsage', () => {
+    it('renvoie des zéros si aucun établissement', async () => {
+      const usage = await service.sommeUsage();
+      expect(usage).toEqual({ utilisateurs: 0, lits: 0, stockageMo: 0 });
+    });
+
+    it('agrège les usages renvoyés par la base', async () => {
+      repository.createQueryBuilder.mockReturnValue(
+        buildQueryBuilder([], { utilisateurs: '12', lits: '8', stockageMo: '2048' }),
+      );
+
+      const usage = await service.sommeUsage();
+
+      expect(usage).toEqual({ utilisateurs: 12, lits: 8, stockageMo: 2048 });
     });
   });
 });

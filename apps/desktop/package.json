@@ -2,5 +2,34 @@
   "name": "@sih-saas/desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Console desktop Electron + Vue (super-admin / établissement) — implémentation prévue en Phase 9"
+  "description": "Console desktop Electron + Vue (super-admin / établissement) — Phase 9",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "build": "vite build && tsc -p tsconfig.node.json",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
+    "@sih-saas/shared": "workspace:*",
+    "ant-design-vue": "^4.2.6",
+    "axios": "^1.7.9",
+    "chart.js": "^4.4.7",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.13",
+    "vue-chartjs": "^5.3.2",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.5",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "concurrently": "^9.1.2",
+    "electron": "^33.2.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.11",
+    "vue-tsc": "^2.2.0",
+    "wait-on": "^8.0.1"
+  }
 }
