@@ -1,5 +1,5 @@
 import { ConflictException } from '@nestjs/common';
-import { Scope, Sexe } from '@sih-saas/shared';
+import { Role, Scope, Sexe } from '@sih-saas/shared';
 import { PatientEntity } from '../infrastructure/entities/patient.entity';
 import { PatientsService } from './patients.service';
 
@@ -71,7 +71,7 @@ describe('PatientsService', () => {
       await service.creerCompteAcces('patient-1', { email: 'ousmane@example.sn', password: 'Password123!' }, 'staff-1');
 
       expect(usersService.create).toHaveBeenCalledWith(
-        expect.objectContaining({ scope: Scope.PATIENT, etablissementId: 'etab-1' }),
+        expect.objectContaining({ scope: Scope.PATIENT, etablissementId: 'etab-1', roles: [Role.PATIENT] }),
       );
       expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }));
     });

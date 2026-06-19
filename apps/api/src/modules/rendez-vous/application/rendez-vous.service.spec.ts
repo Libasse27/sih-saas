@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { RendezVousStatut } from '@sih-saas/shared';
 import { RendezVousService } from './rendez-vous.service';
 
@@ -5,6 +6,7 @@ describe('RendezVousService', () => {
   let repository: { create: jest.Mock; save: jest.Mock; findOne: jest.Mock; findAndCount: jest.Mock; count: jest.Mock };
   let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock };
   let auditService: { log: jest.Mock };
+  let usersService: { estPraticienValide: jest.Mock };
   let service: RendezVousService;
 
   beforeEach(() => {
@@ -20,8 +22,9 @@ describe('RendezVousService', () => {
       getEtablissementId: jest.fn().mockReturnValue('etab-1'),
     };
     auditService = { log: jest.fn() };
+    usersService = { estPraticienValide: jest.fn().mockResolvedValue(true) };
 
-    service = new RendezVousService(tenantContext as any, auditService as any);
+    service = new RendezVousService(tenantContext as any, auditService as any, usersService as any);
   });
 
   it('create() fixe le statut PLANIFIE et journalise', async () => {
@@ -43,6 +46,20 @@ describe('RendezVousService', () => {
     );
 
     expect(rdv.patientId).toBe('patient-self');
+    expect(usersService.estPraticienValide).toHaveBeenCalledWith('medecin-1', 'etab-1');
+  });
+
+  it('createForPatient() refuse un praticien inexistant ou non soignant', async () => {
+    usersService.estPraticienValide.mockResolvedValue(false);
+
+    await expect(
+      service.createForPatient(
+        'patient-self',
+        { praticienId: 'inconnu', dateHeure: '2026-06-22T09:30:00.000Z' },
+        'patient-self',
+      ),
+    ).rejects.toThrow(BadRequestException);
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('existeRdvEntrePraticienEtPatient() renvoie true si au moins un RDV existe', async () => {

@@ -1,9 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Permission, Role, Scope } from '@sih-saas/shared';
+import { MEDICAL_ROLES, Permission, Role, Scope } from '@sih-saas/shared';
 import * as bcrypt from 'bcryptjs';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
 import { SubscriptionsService } from '../../subscriptions/application/subscriptions.service';
@@ -140,9 +140,49 @@ export class UsersService {
     return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
 
+  /** Annuaire patient (Phase 10) : praticiens de son établissement, pour choisir un `praticienId` à la prise de RDV. */
+  async findPraticiensByEtablissement(
+    etablissementId: string,
+  ): Promise<Array<{ id: string; nom: string; prenom: string; roles: Role[] }>> {
+    const userRoles = await this.userRolesRepository.find({ where: { role: In([...MEDICAL_ROLES]) } });
+    const userIds = [...new Set(userRoles.map((userRole) => userRole.userId))];
+    if (!userIds.length) {
+      return [];
+    }
+
+    const users = await this.usersRepository.find({
+      where: { id: In(userIds), etablissementId },
+      order: { nom: 'ASC' },
+    });
+
+    const rolesParUserId = new Map<string, Role[]>();
+    for (const userRole of userRoles) {
+      const roles = rolesParUserId.get(userRole.userId) ?? [];
+      roles.push(userRole.role);
+      rolesParUserId.set(userRole.userId, roles);
+    }
+
+    return users.map((user) => ({
+      id: user.id,
+      nom: user.nom,
+      prenom: user.prenom,
+      roles: rolesParUserId.get(user.id) ?? [],
+    }));
+  }
+
   async getRoles(userId: string): Promise<Role[]> {
     const userRoles = await this.userRolesRepository.find({ where: { userId } });
     return userRoles.map((userRole) => userRole.role);
+  }
+
+  /** Utilisé à la création d'un RDV par un patient (Phase 10) : le praticien doit exister, être de son établissement et soignant. */
+  async estPraticienValide(userId: string, etablissementId: string): Promise<boolean> {
+    const user = await this.usersRepository.findOne({ where: { id: userId, etablissementId } });
+    if (!user) {
+      return false;
+    }
+    const roles = await this.getRoles(userId);
+    return roles.some((role) => MEDICAL_ROLES.has(role));
   }
 
   /** Permissions effectives = somme des permissions des rôles + overrides ALLOW/DENY (matrice-rbac.md §3). */

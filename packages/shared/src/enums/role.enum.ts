@@ -45,3 +45,15 @@ export enum Role {
 export const PLATFORM_ROLES: ReadonlySet<Role> = new Set([Role.SUPER_ADMIN]);
 
 export const PATIENT_ROLES: ReadonlySet<Role> = new Set([Role.PATIENT]);
+
+/** Rôles « soignants » pouvant être désignés comme praticien d'un rendez-vous (catégorie Médical ci-dessus). */
+export const MEDICAL_ROLES: ReadonlySet<Role> = new Set([
+  Role.MEDECIN,
+  Role.CHIRURGIEN,
+  Role.INFIRMIER,
+  Role.ANESTHESISTE,
+  Role.SAGE_FEMME,
+  Role.PSYCHIATRE,
+  Role.KINESITHERAPEUTE,
+  Role.DIETETICIEN,
+]);

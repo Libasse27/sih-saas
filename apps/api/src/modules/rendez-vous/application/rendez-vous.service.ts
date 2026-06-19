@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CanalRdv, RendezVousStatut } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { UsersService } from '../../users/application/users.service';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
 import { RendezVousEntity } from '../infrastructure/entities/rendez-vous.entity';
 import { CreateRendezVousPatientDto } from '../presentation/dto/create-rendez-vous-patient.dto';
@@ -27,6 +28,7 @@ export class RendezVousService {
   constructor(
     private readonly tenantContext: TenantContextService,
     private readonly auditService: AuditService,
+    private readonly usersService: UsersService,
   ) {}
 
   private get repository(): Repository<RendezVousEntity> {
@@ -42,6 +44,11 @@ export class RendezVousService {
     dto: CreateRendezVousPatientDto,
     actingUserId: string,
   ): Promise<RendezVousEntity> {
+    const etablissementId = this.tenantContext.getEtablissementId()!;
+    const praticienValide = await this.usersService.estPraticienValide(dto.praticienId, etablissementId);
+    if (!praticienValide) {
+      throw new BadRequestException('Praticien introuvable ou non habilité à recevoir des rendez-vous.');
+    }
     return this.creerEtJournaliser(patientId, dto, actingUserId);
   }
 

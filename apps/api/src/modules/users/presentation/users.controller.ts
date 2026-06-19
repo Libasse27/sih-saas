@@ -35,6 +35,15 @@ export class UsersController {
     return this.usersService.findByEtablissement(currentUser.etablissementId!, query.page, query.limit);
   }
 
+  /** Déclarée avant `:id` pour ne pas être capturée par le paramètre (même précaution que /patients/me). */
+  @Get('praticiens')
+  @Scopes(Scope.PATIENT)
+  @RequirePermissions(Permission.RDV_CREATE)
+  @ResponseMessage('Praticiens de mon établissement.')
+  findPraticiens(@CurrentUser() currentUser: JwtPayload) {
+    return this.usersService.findPraticiensByEtablissement(currentUser.etablissementId!);
+  }
+
   @Get(':id')
   @Scopes(Scope.PLATFORM, Scope.ETABLISSEMENT)
   @RequirePermissions(Permission.UTILISATEUR_MANAGE)

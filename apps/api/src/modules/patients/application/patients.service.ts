@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Scope } from '@sih-saas/shared';
+import { Role, Scope } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
@@ -116,6 +116,7 @@ export class PatientsService {
     const user = await this.usersService.create({
       scope: Scope.PATIENT,
       etablissementId: patient.etablissementId,
+      roles: [Role.PATIENT],
       nom: patient.nom,
       prenom: patient.prenom,
       email: dto.email,

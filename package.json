@@ -12,6 +12,8 @@
     "dev:desktop": "pnpm --filter @sih-saas/desktop dev",
     "dev:desktop:electron": "pnpm --filter @sih-saas/desktop dev:electron",
     "build:desktop": "pnpm --filter @sih-saas/desktop build",
+    "dev:mobile": "pnpm --filter @sih-saas/mobile start",
+    "dev:mobile:web": "pnpm --filter @sih-saas/mobile web",
     "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down"
   },
