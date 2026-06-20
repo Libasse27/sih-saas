@@ -1,4 +1,4 @@
-import { EtablissementStatut, EtablissementType } from '@sih-saas/shared';
+import { EtablissementStatut, EtablissementType, StatutAutorisationCdp } from '@sih-saas/shared';
 import { EtablissementsService } from './etablissements.service';
 
 describe('EtablissementsService', () => {
@@ -8,6 +8,7 @@ describe('EtablissementsService', () => {
     exists: jest.Mock;
     query: jest.Mock;
     createQueryBuilder: jest.Mock;
+    findOne: jest.Mock;
   };
   let auditService: { log: jest.Mock };
   let service: EtablissementsService;
@@ -29,6 +30,7 @@ describe('EtablissementsService', () => {
       exists: jest.fn().mockResolvedValue(false),
       query: jest.fn(),
       createQueryBuilder: jest.fn(() => buildQueryBuilder()),
+      findOne: jest.fn(),
     };
     auditService = { log: jest.fn() };
     service = new EtablissementsService(repository as any, auditService as any);
@@ -107,6 +109,48 @@ describe('EtablissementsService', () => {
       const usage = await service.sommeUsage();
 
       expect(usage).toEqual({ utilisateurs: 12, lits: 8, stockageMo: 2048 });
+    });
+  });
+
+  describe('updateCdp (Phase 23)', () => {
+    it('remplace l’intégralité du dossier CDP et journalise l’action', async () => {
+      repository.findOne.mockResolvedValue({ id: 'etab-1', statutCdp: StatutAutorisationCdp.NON_INITIEE });
+
+      const resultat = await service.updateCdp(
+        'etab-1',
+        {
+          statut: StatutAutorisationCdp.DEMANDE_SOUMISE,
+          numeroRecepisse: 'CDP-2026-001',
+          dateDemande: '2026-06-20',
+          commentaire: 'Soumis par le cabinet partenaire.',
+        },
+        'admin-1',
+      );
+
+      expect(resultat.statutCdp).toBe(StatutAutorisationCdp.DEMANDE_SOUMISE);
+      expect(resultat.numeroRecepisseCdp).toBe('CDP-2026-001');
+      expect(resultat.dateDecisionCdp).toBeNull();
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'etablissement.cdp.update',
+          ressourceId: 'etab-1',
+          metadata: { statut: StatutAutorisationCdp.DEMANDE_SOUMISE },
+        }),
+      );
+    });
+
+    it('remet les champs optionnels absents à null plutôt que de garder les anciennes valeurs', async () => {
+      repository.findOne.mockResolvedValue({
+        id: 'etab-1',
+        statutCdp: StatutAutorisationCdp.DEMANDE_SOUMISE,
+        numeroRecepisseCdp: 'CDP-2026-001',
+        commentaireCdp: 'Ancien commentaire',
+      });
+
+      const resultat = await service.updateCdp('etab-1', { statut: StatutAutorisationCdp.AUTORISEE }, 'admin-1');
+
+      expect(resultat.numeroRecepisseCdp).toBeNull();
+      expect(resultat.commentaireCdp).toBeNull();
     });
   });
 });

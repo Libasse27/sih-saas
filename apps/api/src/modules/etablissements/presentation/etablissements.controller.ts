@@ -8,6 +8,7 @@ import { Scopes } from '../../../shared/decorators/scopes.decorator';
 import { EtablissementsService } from '../application/etablissements.service';
 import { CreateEtablissementDto } from './dto/create-etablissement.dto';
 import { FindEtablissementsQueryDto } from './dto/find-etablissements-query.dto';
+import { UpdateEtablissementCdpDto } from './dto/update-etablissement-cdp.dto';
 import { UpdateEtablissementStatutDto } from './dto/update-etablissement-statut.dto';
 
 @ApiTags('Établissements (plateforme)')
@@ -47,5 +48,16 @@ export class EtablissementsController {
     @CurrentUser() currentUser: JwtPayload,
   ) {
     return this.etablissementsService.updateStatut(id, dto.statut, currentUser.sub);
+  }
+
+  @Patch(':id/cdp')
+  @RequirePermissions(Permission.ETABLISSEMENT_MANAGE)
+  @ResponseMessage('Statut d’autorisation CDP mis à jour.')
+  updateCdp(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateEtablissementCdpDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.etablissementsService.updateCdp(id, dto, currentUser.sub);
   }
 }

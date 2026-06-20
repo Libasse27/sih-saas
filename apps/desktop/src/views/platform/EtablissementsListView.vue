@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { EtablissementStatut } from '@sih-saas/shared';
+import { EtablissementStatut, StatutAutorisationCdp } from '@sih-saas/shared';
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -24,11 +24,30 @@ const COULEUR_STATUT: Record<EtablissementStatut, string> = {
   [EtablissementStatut.ESSAI]: 'blue',
 };
 
+// Suivi du dossier d'autorisation CDP (Phase 23, voir docs/conformite-rgpd-cdp.md) — visibilité
+// uniquement, ne bloque aucune action sur l'établissement.
+const LIBELLE_STATUT_CDP: Record<StatutAutorisationCdp, string> = {
+  [StatutAutorisationCdp.NON_INITIEE]: 'Non initiée',
+  [StatutAutorisationCdp.DEMANDE_SOUMISE]: 'Demande soumise',
+  [StatutAutorisationCdp.AUTORISEE]: 'Autorisée',
+  [StatutAutorisationCdp.REFUSEE]: 'Refusée',
+  [StatutAutorisationCdp.RETIREE]: 'Retirée',
+};
+
+const COULEUR_STATUT_CDP: Record<StatutAutorisationCdp, string> = {
+  [StatutAutorisationCdp.NON_INITIEE]: 'default',
+  [StatutAutorisationCdp.DEMANDE_SOUMISE]: 'orange',
+  [StatutAutorisationCdp.AUTORISEE]: 'green',
+  [StatutAutorisationCdp.REFUSEE]: 'red',
+  [StatutAutorisationCdp.RETIREE]: 'red',
+};
+
 const colonnes = [
   { title: 'Code', dataIndex: 'code', key: 'code' },
   { title: 'Nom', dataIndex: 'nom', key: 'nom' },
   { title: 'Type', dataIndex: 'type', key: 'type' },
   { title: 'Statut', key: 'statut' },
+  { title: 'Statut CDP', key: 'statutCdp' },
   { title: 'Utilisateurs', key: 'utilisateurs' },
   { title: 'Lits', key: 'lits' },
   { title: 'Créé le', key: 'createdAt' },
@@ -107,6 +126,11 @@ onMounted(charger);
         <template v-if="column.key === 'statut'">
           <a-tag :color="COULEUR_STATUT[record.statut as EtablissementStatut]">
             {{ LIBELLE_STATUT[record.statut as EtablissementStatut] }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'statutCdp'">
+          <a-tag :color="COULEUR_STATUT_CDP[record.statutCdp as StatutAutorisationCdp]">
+            {{ LIBELLE_STATUT_CDP[record.statutCdp as StatutAutorisationCdp] }}
           </a-tag>
         </template>
         <template v-else-if="column.key === 'utilisateurs'">{{ record.usage.utilisateurs }}</template>

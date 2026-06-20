@@ -1,4 +1,4 @@
-import { EtablissementStatut, EtablissementType } from '@sih-saas/shared';
+import { EtablissementStatut, EtablissementType, StatutAutorisationCdp } from '@sih-saas/shared';
 import {
   Column,
   CreateDateColumn,
@@ -84,6 +84,23 @@ export class EtablissementEntity {
 
   @Column({ type: 'jsonb', default: () => `'{}'` })
   compteurs: EtablissementCompteurs;
+
+  // Suivi du dossier d'autorisation CDP (Phase 23, voir docs/conformite-rgpd-cdp.md) — visibilité/
+  // gouvernance uniquement, ne bloque aucun flux clinique ni l'activation de l'établissement.
+  @Column({ type: 'enum', enum: StatutAutorisationCdp, default: StatutAutorisationCdp.NON_INITIEE })
+  statutCdp: StatutAutorisationCdp;
+
+  @Column({ type: 'varchar', nullable: true })
+  numeroRecepisseCdp: string | null;
+
+  @Column({ type: 'date', nullable: true })
+  dateDemandeCdp: string | null;
+
+  @Column({ type: 'date', nullable: true })
+  dateDecisionCdp: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  commentaireCdp: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

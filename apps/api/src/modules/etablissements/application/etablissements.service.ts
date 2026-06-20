@@ -6,6 +6,7 @@ import { AuditService } from '../../audit/application/audit.service';
 import { deriverCodeBase } from '../domain/code-generator';
 import { EtablissementEntity, EtablissementUsage } from '../infrastructure/entities/etablissement.entity';
 import { CreateEtablissementDto } from '../presentation/dto/create-etablissement.dto';
+import { UpdateEtablissementCdpDto } from '../presentation/dto/update-etablissement-cdp.dto';
 
 @Injectable()
 export class EtablissementsService {
@@ -65,6 +66,37 @@ export class EtablissementsService {
       ressource: 'etablissement',
       ressourceId: etablissement.id,
       metadata: { statut },
+    });
+
+    return etablissement;
+  }
+
+  /**
+   * Suivi du dossier d'autorisation CDP (Phase 23) — visibilité/gouvernance uniquement, ne bloque
+   * jamais l'activation de l'établissement ni aucun flux clinique (voir docs/conformite-rgpd-cdp.md,
+   * statut d'autorisation par établissement encore non tranché juridiquement). Remplace
+   * l'intégralité du dossier à chaque appel (voir UpdateEtablissementCdpDto).
+   */
+  async updateCdp(
+    id: string,
+    dto: UpdateEtablissementCdpDto,
+    actingUserId: string | null,
+  ): Promise<EtablissementEntity> {
+    const etablissement = await this.findById(id);
+    etablissement.statutCdp = dto.statut;
+    etablissement.numeroRecepisseCdp = dto.numeroRecepisse ?? null;
+    etablissement.dateDemandeCdp = dto.dateDemande ?? null;
+    etablissement.dateDecisionCdp = dto.dateDecision ?? null;
+    etablissement.commentaireCdp = dto.commentaire ?? null;
+    await this.repository.save(etablissement);
+
+    await this.auditService.log({
+      etablissementId: etablissement.id,
+      userId: actingUserId,
+      action: 'etablissement.cdp.update',
+      ressource: 'etablissement',
+      ressourceId: etablissement.id,
+      metadata: { statut: dto.statut },
     });
 
     return etablissement;
