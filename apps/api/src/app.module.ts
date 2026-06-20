@@ -18,7 +18,9 @@ import { ImagerieModule } from './modules/imagerie/imagerie.module';
 import { LaboratoireModule } from './modules/laboratoire/laboratoire.module';
 import { LogistiqueModule } from './modules/logistique/logistique.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+import { MessagingModule } from './modules/messaging/messaging.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PushNotificationsModule } from './modules/notifications/push-notifications.module';
 import { PatientsModule } from './modules/patients/patients.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PharmacieModule } from './modules/pharmacie/pharmacie.module';
@@ -61,6 +63,8 @@ import { SharedModule } from './shared/shared.module';
     SterilisationModule,
     LogistiqueModule,
     SocialModule,
+    PushNotificationsModule,
+    MessagingModule,
   ],
   controllers: [HealthController],
 })

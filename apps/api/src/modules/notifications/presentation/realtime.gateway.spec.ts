@@ -40,13 +40,14 @@ describe('RealtimeGateway', () => {
     expect(client.disconnect).toHaveBeenCalledWith(true);
   });
 
-  it('rejoint le salon tenant:{etablissementId} pour un client authentifié', async () => {
+  it('rejoint le salon tenant:{etablissementId} et le salon personnel pour un client authentifié', async () => {
     jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1', etablissementId: 'etab-A' });
     const client = buildClient({ handshake: { auth: { token: 'bon-token' }, headers: {} } });
 
     await gateway.handleConnection(client);
 
     expect(client.join).toHaveBeenCalledWith('tenant:etab-A');
+    expect(client.join).toHaveBeenCalledWith('user:user-1');
     expect(client.disconnect).not.toHaveBeenCalled();
   });
 
@@ -60,13 +61,14 @@ describe('RealtimeGateway', () => {
     expect(client.join).toHaveBeenCalledWith('tenant:etab-A');
   });
 
-  it('ne rejoint aucun salon pour un compte PLATFORM (etablissementId null)', async () => {
+  it('ne rejoint aucun salon tenant pour un compte PLATFORM (etablissementId null), mais rejoint son salon personnel', async () => {
     jwtService.verifyAsync.mockResolvedValue({ sub: 'super-admin', etablissementId: null });
     const client = buildClient({ handshake: { auth: { token: 'bon-token' }, headers: {} } });
 
     await gateway.handleConnection(client);
 
-    expect(client.join).not.toHaveBeenCalled();
+    expect(client.join).not.toHaveBeenCalledWith(expect.stringContaining('tenant:'));
+    expect(client.join).toHaveBeenCalledWith('user:super-admin');
     expect(client.disconnect).not.toHaveBeenCalled();
   });
 
@@ -79,5 +81,16 @@ describe('RealtimeGateway', () => {
 
     expect(to).toHaveBeenCalledWith('tenant:etab-A');
     expect(emit).toHaveBeenCalledWith('lits:updated', { litId: 'lit-1' });
+  });
+
+  it('emitToUser() diffuse uniquement dans le salon personnel correspondant (Phase 14, messagerie)', () => {
+    const emit = jest.fn();
+    const to = jest.fn().mockReturnValue({ emit });
+    gateway.server = { to } as any;
+
+    gateway.emitToUser('user-1', 'message:nouveau', { conversationId: 'conv-1' });
+
+    expect(to).toHaveBeenCalledWith('user:user-1');
+    expect(emit).toHaveBeenCalledWith('message:nouveau', { conversationId: 'conv-1' });
   });
 });

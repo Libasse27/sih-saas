@@ -104,6 +104,11 @@ const router = createRouter({
           component: () => import('../views/etablissement/FacturationCaisseView.vue'),
         },
         {
+          path: 'messages',
+          name: 'etablissement-messages',
+          component: () => import('../views/etablissement/MessagesView.vue'),
+        },
+        {
           path: 'maintenance',
           name: 'etablissement-maintenance',
           component: () => import('../views/etablissement/MaintenanceListView.vue'),

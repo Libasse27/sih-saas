@@ -1,0 +1,11 @@
+import { Stack } from 'expo-router';
+
+export default function MessagesLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="index" options={{ title: 'Messages' }} />
+      <Stack.Screen name="nouveau" options={{ title: 'Nouvelle conversation' }} />
+      <Stack.Screen name="[id]" options={{ title: 'Conversation' }} />
+    </Stack>
+  );
+}

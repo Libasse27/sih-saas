@@ -7,6 +7,7 @@ import {
   EyeOutlined,
   KeyOutlined,
   MedicineBoxOutlined,
+  MessageOutlined,
   SafetyOutlined,
   ShopOutlined,
   SmileOutlined,
@@ -70,6 +71,9 @@ const menuItems = computed(() => {
   }
   if (auth.aPermission(Permission.FACTURE_PATIENT_CREATE)) {
     items.push({ key: 'etablissement-facturation', label: 'Facturation', icon: DollarOutlined });
+  }
+  if (auth.aPermission(Permission.MESSAGE_READ)) {
+    items.push({ key: 'etablissement-messages', label: 'Messages', icon: MessageOutlined });
   }
   if (auth.aPermission(Permission.MAINTENANCE_MANAGE)) {
     items.push({ key: 'etablissement-maintenance', label: 'Maintenance', icon: ToolOutlined });

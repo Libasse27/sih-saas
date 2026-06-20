@@ -27,9 +27,9 @@ describe('RealtimeGateway (isolation cross-tenant)', () => {
   let baseUrl: string;
   const jwtService = new JwtService({});
 
-  function signToken(etablissementId: string | null): string {
+  function signToken(etablissementId: string | null, userId = 'user-1'): string {
     return jwtService.sign(
-      { sub: 'user-1', scope: etablissementId ? Scope.ETABLISSEMENT : Scope.PLATFORM, etablissementId, roles: [], permissions: [] },
+      { sub: userId, scope: etablissementId ? Scope.ETABLISSEMENT : Scope.PLATFORM, etablissementId, roles: [], permissions: [] },
       { secret: JWT_SECRET },
     );
   }
@@ -101,5 +101,27 @@ describe('RealtimeGateway (isolation cross-tenant)', () => {
 
   it('rejette la connexion sans JWT valide', async () => {
     await connectAndExpectRejection('jeton-invalide');
+  });
+
+  it("un message ciblé via emitToUser n'atteint que le destinataire, jamais un autre utilisateur du même établissement (Phase 14, messagerie)", async () => {
+    const socketDestinataire = await connect(signToken('etab-A', 'user-destinataire'));
+    const socketAutre = await connect(signToken('etab-A', 'user-autre'));
+
+    try {
+      const recuParDestinataire: unknown[] = [];
+      const recuParAutre: unknown[] = [];
+      socketDestinataire.on('message:nouveau', (payload) => recuParDestinataire.push(payload));
+      socketAutre.on('message:nouveau', (payload) => recuParAutre.push(payload));
+
+      gateway.emitToUser('user-destinataire', 'message:nouveau', { conversationId: 'conv-1' });
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      expect(recuParDestinataire).toEqual([{ conversationId: 'conv-1' }]);
+      expect(recuParAutre).toEqual([]);
+    } finally {
+      socketDestinataire.disconnect();
+      socketAutre.disconnect();
+    }
   });
 });

@@ -43,6 +43,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       if (payload.etablissementId) {
         await client.join(this.tenantRoom(payload.etablissementId));
       }
+      // Salon personnel (Phase 14, messagerie) : seul moyen de cibler un destinataire précis sans
+      // diffuser à tout le tenant — une conversation ne doit jamais être visible par un tiers du
+      // même établissement, contrairement aux événements lits/stock/labo/imagerie (diffusion large).
+      await client.join(this.userRoom(payload.sub));
     } catch {
       client.disconnect(true);
     }
@@ -57,8 +61,17 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.to(this.tenantRoom(etablissementId)).emit(event, payload);
   }
 
+  /** Diffuse un événement uniquement aux connexions de cet utilisateur précis (Phase 14, messagerie). */
+  emitToUser(userId: string, event: string, payload: unknown): void {
+    this.server.to(this.userRoom(userId)).emit(event, payload);
+  }
+
   private tenantRoom(etablissementId: string): string {
     return `tenant:${etablissementId}`;
+  }
+
+  private userRoom(userId: string): string {
+    return `user:${userId}`;
   }
 
   private extractToken(client: Socket): string | null {

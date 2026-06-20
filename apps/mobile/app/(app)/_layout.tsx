@@ -34,6 +34,14 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="receipt" color={color} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="message-text" color={color} size={size} />,
+        }}
+      />
     </Tabs>
   );
 }

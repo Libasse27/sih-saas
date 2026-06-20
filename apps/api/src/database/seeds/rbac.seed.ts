@@ -40,6 +40,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.LABO_REQUEST,
     Permission.IMAGERIE_REQUEST,
     Permission.RDV_CREATE,
+    Permission.MESSAGE_SEND,
+    Permission.MESSAGE_READ,
   ],
   [Role.CHIRURGIEN]: [
     Permission.PATIENT_READ,
@@ -51,12 +53,16 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.LABO_REQUEST,
     Permission.IMAGERIE_REQUEST,
     Permission.RDV_CREATE,
+    Permission.MESSAGE_SEND,
+    Permission.MESSAGE_READ,
   ],
   [Role.INFIRMIER]: [
     Permission.DOSSIER_READ,
     Permission.DOSSIER_WRITE,
     Permission.ADMINISTRATION_CREATE,
     Permission.RDV_CREATE,
+    Permission.MESSAGE_SEND,
+    Permission.MESSAGE_READ,
   ],
   [Role.ANESTHESISTE]: [
     Permission.PATIENT_READ,
@@ -65,6 +71,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.CONSULTATION_CREATE,
     Permission.PRESCRIPTION_CREATE,
     Permission.PRESCRIPTION_VALIDATE,
+    Permission.MESSAGE_SEND,
+    Permission.MESSAGE_READ,
   ],
   [Role.SAGE_FEMME]: [
     Permission.DOSSIER_READ,
@@ -72,6 +80,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.ADMINISTRATION_CREATE,
     Permission.RDV_CREATE,
     Permission.CONSULTATION_CREATE,
+    Permission.MESSAGE_SEND,
+    Permission.MESSAGE_READ,
   ],
   [Role.PSYCHIATRE]: [
     Permission.PATIENT_READ,
@@ -83,9 +93,11 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.LABO_REQUEST,
     Permission.IMAGERIE_REQUEST,
     Permission.RDV_CREATE,
+    Permission.MESSAGE_SEND,
+    Permission.MESSAGE_READ,
   ],
-  [Role.KINESITHERAPEUTE]: [Permission.DOSSIER_READ, Permission.DOSSIER_WRITE],
-  [Role.DIETETICIEN]: [Permission.DOSSIER_READ, Permission.DOSSIER_WRITE],
+  [Role.KINESITHERAPEUTE]: [Permission.DOSSIER_READ, Permission.DOSSIER_WRITE, Permission.MESSAGE_SEND, Permission.MESSAGE_READ],
+  [Role.DIETETICIEN]: [Permission.DOSSIER_READ, Permission.DOSSIER_WRITE, Permission.MESSAGE_SEND, Permission.MESSAGE_READ],
   [Role.RADIOLOGUE]: [
     Permission.IMAGERIE_REQUEST,
     Permission.IMAGERIE_REPORT_WRITE,
@@ -124,7 +136,13 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   [Role.GESTIONNAIRE_LITS]: [Permission.LIT_VIEW, Permission.LIT_ASSIGN, Permission.LIT_LIBERER],
   [Role.ASSISTANT_SOCIAL]: [Permission.SOCIAL_MANAGE, Permission.DOSSIER_READ],
   [Role.RH]: [Permission.RH_MANAGE],
-  [Role.PATIENT]: [Permission.DOSSIER_READ, Permission.RDV_CREATE, Permission.PAIEMENT_PATIENT_CREATE],
+  [Role.PATIENT]: [
+    Permission.DOSSIER_READ,
+    Permission.RDV_CREATE,
+    Permission.PAIEMENT_PATIENT_CREATE,
+    Permission.MESSAGE_SEND,
+    Permission.MESSAGE_READ,
+  ],
 };
 
 async function seedRbac() {

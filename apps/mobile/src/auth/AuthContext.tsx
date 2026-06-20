@@ -2,6 +2,7 @@ import type { JwtPayload } from '@sih-saas/shared';
 import { Scope } from '@sih-saas/shared';
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import * as authService from '../api/auth.service';
+import { desinscrireNotificationsPush, enregistrerPourNotificationsPush } from '../notifications/push-registration';
 import { biometrieDisponible } from './biometric';
 import { secureStorage } from './secure-storage';
 import { sessionStore } from './session-store';
@@ -42,9 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error('Cette application est réservée aux patients. Utilisez la console établissement.');
         }
         await sessionStore.appliquerSession(data.accessToken, data.refreshToken);
+        void enregistrerPourNotificationsPush();
       },
 
       async logout() {
+        await desinscrireNotificationsPush();
         await sessionStore.logout();
         await secureStorage.delete(BIOMETRIE_FLAG_KEY);
       },

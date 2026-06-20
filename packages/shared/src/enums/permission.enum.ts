@@ -71,6 +71,11 @@ export enum Permission {
   // Interopérabilité / sécurité (Phase 11)
   API_KEY_MANAGE = 'api-key:manage',
   FHIR_READ = 'fhir:read', // accordée uniquement via une clé API, jamais un rôle humain
+
+  // Messagerie sécurisée (Phase 14) — pas de routes nichées sous /patients/:patientId
+  // (une conversation est identifiée par son propre id), donc jamais 🩺/CareContextGuard.
+  MESSAGE_SEND = 'message:send',
+  MESSAGE_READ = 'message:read',
 }
 
 /** Effet d'un override ponctuel dans user_permissions (matrice-rbac.md §0 — table user_permissions). */
