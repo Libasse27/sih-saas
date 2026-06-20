@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Periodicite } from '@sih-saas/shared';
-import { IsEnum, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class InitierPaymentDto {
   @ApiProperty()
@@ -14,4 +14,9 @@ export class InitierPaymentDto {
   @ApiProperty({ enum: Periodicite })
   @IsEnum(Periodicite)
   periodicite: Periodicite;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
 }

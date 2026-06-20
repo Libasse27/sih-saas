@@ -49,6 +49,19 @@ describe('ProvisioningService', () => {
     expect(auditService.log).toHaveBeenCalled();
   });
 
+  it('transmet couponApplique/montantOverride à subscribe() quand fournis', async () => {
+    await service.provisionner('etab-1', 'plan-1', Periodicite.MENSUEL, {
+      couponApplique: 'PROMO20',
+      montantOverride: 40000,
+    });
+
+    expect(subscriptionsService.subscribe).toHaveBeenCalledWith(
+      'etab-1',
+      { planId: 'plan-1', periodicite: Periodicite.MENSUEL, couponApplique: 'PROMO20', montantOverride: 40000 },
+      'admin-1',
+    );
+  });
+
   it("ignore l'envoi d'email si l'établissement n'a pas encore d'admin assigné", async () => {
     etablissementsService.findById.mockResolvedValue({ id: 'etab-1', nom: 'Clinique Test', adminId: null });
 

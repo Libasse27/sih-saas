@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Periodicite } from '@sih-saas/shared';
-import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class CreateSubscriptionDto {
   @ApiProperty()
@@ -20,4 +20,11 @@ export class CreateSubscriptionDto {
   @IsOptional()
   @IsString()
   couponApplique?: string;
+
+  /** Montant déjà remisé (coupon validé en amont par PaymentsService) — sinon calculerMontant() fait foi. */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  montantOverride?: number;
 }

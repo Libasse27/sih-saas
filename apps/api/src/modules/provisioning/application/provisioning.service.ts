@@ -26,13 +26,18 @@ export class ProvisioningService {
     private readonly auditService: AuditService,
   ) {}
 
-  async provisionner(etablissementId: string, planId: string, periodicite: Periodicite): Promise<SubscriptionEntity> {
+  async provisionner(
+    etablissementId: string,
+    planId: string,
+    periodicite: Periodicite,
+    options?: { couponApplique?: string; montantOverride?: number },
+  ): Promise<SubscriptionEntity> {
     const etablissement = await this.etablissementsService.findById(etablissementId);
     const actingUserId = etablissement.adminId ?? etablissementId;
 
     const subscription = await this.subscriptionsService.subscribe(
       etablissementId,
-      { planId, periodicite },
+      { planId, periodicite, couponApplique: options?.couponApplique, montantOverride: options?.montantOverride },
       actingUserId,
     );
 

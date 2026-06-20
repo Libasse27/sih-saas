@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Periodicite, PaymentStatut } from '@sih-saas/shared';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { CouponsService } from '../../coupons/application/coupons.service';
 import { PlansService } from '../../plans/application/plans.service';
 import { ProvisioningService } from '../../provisioning/application/provisioning.service';
+import { SettingsService } from '../../settings/application/settings.service';
 import { SandboxPaymentGateway } from '../infrastructure/providers/sandbox-payment-gateway';
 import { PaymentEntity } from '../infrastructure/entities/payment.entity';
 import { InitierPaymentDto } from '../presentation/dto/initier-payment.dto';
@@ -29,11 +31,27 @@ export class PaymentsService {
     private readonly gateway: SandboxPaymentGateway,
     private readonly provisioningService: ProvisioningService,
     private readonly auditService: AuditService,
+    private readonly couponsService: CouponsService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async initier(dto: InitierPaymentDto): Promise<InitierPaymentResult> {
+    const settings = await this.settingsService.getOrCreate();
+    if (!settings.paiements.actifs) {
+      throw new ServiceUnavailableException('Les paiements d\'abonnement sont temporairement désactivés.');
+    }
+
     const plan = await this.plansService.findById(dto.planId);
-    const montant = dto.periodicite === Periodicite.MENSUEL ? plan.tarifs.mensuel : plan.tarifs.annuel;
+    const montantBase = dto.periodicite === Periodicite.MENSUEL ? plan.tarifs.mensuel : plan.tarifs.annuel;
+
+    let montant = montantBase;
+    let couponCode: string | null = null;
+    if (dto.couponCode) {
+      const resultat = await this.couponsService.appliquer(dto.couponCode, dto.planId, montantBase);
+      montant = resultat.montant;
+      couponCode = resultat.coupon.code;
+    }
+
     const reference = randomUUID();
 
     await this.repository.save(
@@ -46,6 +64,7 @@ export class PaymentsService {
         montant,
         devise: plan.tarifs.devise,
         statut: PaymentStatut.EN_ATTENTE,
+        couponCode,
       }),
     );
 
@@ -60,7 +79,7 @@ export class PaymentsService {
       etablissementId: dto.etablissementId,
       action: 'payment.initier',
       ressource: 'payment',
-      metadata: { reference, montant, planId: dto.planId },
+      metadata: { reference, montant, planId: dto.planId, couponCode },
     });
 
     return { reference, redirectUrl, montant, devise: plan.tarifs.devise };
@@ -102,6 +121,10 @@ export class PaymentsService {
         payment.etablissementId,
         payment.planId,
         payment.periodicite,
+        // montantOverride : le montant du paiement REUSSI est déjà la remise coupon appliquée
+        // (calculée dans initier()) — jamais recalculé ici, pour ne jamais désynchroniser le
+        // montant réellement payé de celui de l'abonnement créé.
+        payment.couponCode ? { couponApplique: payment.couponCode, montantOverride: Number(payment.montant) } : undefined,
       );
       payment.subscriptionId = subscription.id;
       await this.repository.save(payment);

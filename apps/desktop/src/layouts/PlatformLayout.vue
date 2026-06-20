@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { AppstoreOutlined, BankOutlined, DashboardOutlined, FileSearchOutlined, LogoutOutlined } from '@ant-design/icons-vue';
+import {
+  AppstoreOutlined,
+  BankOutlined,
+  DashboardOutlined,
+  FileSearchOutlined,
+  GiftOutlined,
+  LogoutOutlined,
+  SettingOutlined,
+  TagsOutlined,
+} from '@ant-design/icons-vue';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
@@ -12,6 +21,9 @@ const menuItems = [
   { key: 'platform-dashboard', label: 'Tableau de bord', icon: DashboardOutlined },
   { key: 'platform-etablissements', label: 'Établissements', icon: BankOutlined },
   { key: 'platform-plans', label: 'Forfaits', icon: AppstoreOutlined },
+  { key: 'platform-coupons', label: 'Coupons', icon: TagsOutlined },
+  { key: 'platform-promotions', label: 'Promotions', icon: GiftOutlined },
+  { key: 'platform-parametres', label: 'Paramètres', icon: SettingOutlined },
   { key: 'platform-audit', label: 'Audit', icon: FileSearchOutlined },
 ];
 

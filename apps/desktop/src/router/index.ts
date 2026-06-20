@@ -40,6 +40,21 @@ const router = createRouter({
           component: () => import('../views/platform/PlansListView.vue'),
         },
         {
+          path: 'coupons',
+          name: 'platform-coupons',
+          component: () => import('../views/platform/CouponsListView.vue'),
+        },
+        {
+          path: 'promotions',
+          name: 'platform-promotions',
+          component: () => import('../views/platform/PromotionsListView.vue'),
+        },
+        {
+          path: 'parametres',
+          name: 'platform-parametres',
+          component: () => import('../views/platform/SettingsView.vue'),
+        },
+        {
           path: 'audit',
           name: 'platform-audit',
           component: () => import('../views/platform/AuditLogView.vue'),

@@ -1,4 +1,4 @@
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { Periodicite, PaymentProviderType, PaymentStatut } from '@sih-saas/shared';
 import { PaymentEntity } from '../infrastructure/entities/payment.entity';
 import { PaymentsService } from './payments.service';
@@ -9,6 +9,8 @@ describe('PaymentsService', () => {
   let gateway: { type: PaymentProviderType; initier: jest.Mock; verifierWebhook: jest.Mock };
   let provisioningService: { provisionner: jest.Mock };
   let auditService: { log: jest.Mock };
+  let couponsService: { appliquer: jest.Mock };
+  let settingsService: { getOrCreate: jest.Mock };
   let service: PaymentsService;
 
   beforeEach(() => {
@@ -26,6 +28,8 @@ describe('PaymentsService', () => {
     };
     provisioningService = { provisionner: jest.fn().mockResolvedValue({ id: 'sub-1' }) };
     auditService = { log: jest.fn() };
+    couponsService = { appliquer: jest.fn() };
+    settingsService = { getOrCreate: jest.fn().mockResolvedValue({ paiements: { actifs: true } }) };
 
     service = new PaymentsService(
       repository as any,
@@ -33,6 +37,8 @@ describe('PaymentsService', () => {
       gateway as any,
       provisioningService as any,
       auditService as any,
+      couponsService as any,
+      settingsService as any,
     );
   });
 
@@ -60,6 +66,30 @@ describe('PaymentsService', () => {
       });
 
       expect(result.montant).toBe(540000);
+    });
+
+    it('rejette si les paiements sont désactivés via Settings', async () => {
+      settingsService.getOrCreate.mockResolvedValue({ paiements: { actifs: false } });
+
+      await expect(
+        service.initier({ etablissementId: 'etab-1', planId: 'plan-1', periodicite: Periodicite.MENSUEL }),
+      ).rejects.toThrow(ServiceUnavailableException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('applique un coupon et réduit le montant', async () => {
+      couponsService.appliquer.mockResolvedValue({ coupon: { code: 'PROMO20' }, montant: 40000 });
+
+      const result = await service.initier({
+        etablissementId: 'etab-1',
+        planId: 'plan-1',
+        periodicite: Periodicite.MENSUEL,
+        couponCode: 'promo20',
+      });
+
+      expect(couponsService.appliquer).toHaveBeenCalledWith('promo20', 'plan-1', 50000);
+      expect(result.montant).toBe(40000);
+      expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({ couponCode: 'PROMO20', montant: 40000 }));
     });
   });
 
@@ -97,10 +127,24 @@ describe('PaymentsService', () => {
         statut: 'REUSSI',
       });
 
-      expect(provisioningService.provisionner).toHaveBeenCalledWith('etab-1', 'plan-1', Periodicite.MENSUEL);
+      expect(provisioningService.provisionner).toHaveBeenCalledWith('etab-1', 'plan-1', Periodicite.MENSUEL, undefined);
       expect(repository.save).toHaveBeenLastCalledWith(
         expect.objectContaining({ subscriptionId: 'sub-1' }),
       );
+    });
+
+    it('passe couponApplique/montantOverride au provisionnement quand un coupon a été utilisé', async () => {
+      repository.findOne.mockResolvedValue(buildPayment({ couponCode: 'PROMO20', montant: 40000 }));
+
+      await service.handleWebhook('sandbox', '{"reference":"ref-1","statut":"REUSSI"}', 'sig', {
+        reference: 'ref-1',
+        statut: 'REUSSI',
+      });
+
+      expect(provisioningService.provisionner).toHaveBeenCalledWith('etab-1', 'plan-1', Periodicite.MENSUEL, {
+        couponApplique: 'PROMO20',
+        montantOverride: 40000,
+      });
     });
 
     it('ne déclenche pas le provisionnement sur un paiement ECHOUE', async () => {

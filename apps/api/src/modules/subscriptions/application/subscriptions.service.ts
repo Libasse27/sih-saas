@@ -59,7 +59,8 @@ export class SubscriptionsService {
         dateDebut,
         dateFin,
         statut: enEssai ? SubscriptionStatut.ESSAI : SubscriptionStatut.ACTIF,
-        montant: enEssai ? 0 : calculerMontant(snapshot, dto.periodicite),
+        // En essai gratuit, toujours 0 — même un coupon ne doit jamais facturer une période d'essai.
+        montant: enEssai ? 0 : dto.montantOverride ?? calculerMontant(snapshot, dto.periodicite),
         devise: snapshot.tarifs.devise,
         renouvellementAuto: dto.renouvellementAuto ?? true,
         couponApplique: dto.couponApplique ?? null,

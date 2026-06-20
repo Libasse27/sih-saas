@@ -91,6 +91,31 @@ describe('SubscriptionsService', () => {
       expect(subscription.montant).toBe(0);
     });
 
+    it('utilise montantOverride (coupon déjà appliqué par PaymentsService) au lieu de calculerMontant', async () => {
+      plansService.findById.mockResolvedValue(buildPlan());
+
+      const subscription = await service.subscribe(
+        'etab-1',
+        { planId: 'plan-1', periodicite: Periodicite.MENSUEL, couponApplique: 'PROMO20', montantOverride: 80000 },
+        'admin-1',
+      );
+
+      expect(subscription.montant).toBe(80000);
+      expect(subscription.couponApplique).toBe('PROMO20');
+    });
+
+    it('ignore montantOverride pendant un essai gratuit (toujours 0)', async () => {
+      plansService.findById.mockResolvedValue(buildPlan({ essaiGratuitJours: 14 }));
+
+      const subscription = await service.subscribe(
+        'etab-1',
+        { planId: 'plan-1', periodicite: Periodicite.ANNUEL, montantOverride: 80000 },
+        'admin-1',
+      );
+
+      expect(subscription.montant).toBe(0);
+    });
+
     it('grandfathering : modifier le Plan après coup ne change pas le planSnapshot déjà figé', async () => {
       const plan = buildPlan();
       plansService.findById.mockResolvedValue(plan);

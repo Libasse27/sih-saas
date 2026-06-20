@@ -9,6 +9,7 @@ import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ConsultationsModule } from './modules/consultations/consultations.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
 import { DossierMedicalModule } from './modules/dossier-medical/dossier-medical.module';
 import { EtablissementsModule } from './modules/etablissements/etablissements.module';
 import { FacturationPatientModule } from './modules/facturation-patient/facturation-patient.module';
@@ -26,7 +27,9 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { PharmacieModule } from './modules/pharmacie/pharmacie.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 import { RendezVousModule } from './modules/rendez-vous/rendez-vous.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { SocialModule } from './modules/social/social.module';
 import { SterilisationModule } from './modules/sterilisation/sterilisation.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
@@ -44,6 +47,9 @@ import { SharedModule } from './shared/shared.module';
     AuthModule,
     EtablissementsModule,
     PlansModule,
+    CouponsModule,
+    PromotionsModule,
+    SettingsModule,
     SubscriptionsModule,
     PaymentsModule,
     PatientsModule,

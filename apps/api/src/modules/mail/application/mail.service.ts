@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { SettingsService } from '../../settings/application/settings.service';
 
 /**
  * Transport dev par défaut (`jsonTransport`) : aucune connexion réseau, le message est
@@ -13,7 +14,10 @@ export class MailService {
   private readonly transporter: nodemailer.Transporter;
   private readonly from: string;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly settingsService: SettingsService,
+  ) {
     this.from = this.config.get<string>('mail.from')!;
 
     if (this.config.get<string>('mail.transport') === 'smtp') {
@@ -31,11 +35,19 @@ export class MailService {
   }
 
   async envoyerBienvenue(destinataire: string, nomEtablissement: string): Promise<void> {
+    const settings = await this.settingsService.getOrCreate();
+    const from = settings.email.emailExpediteur
+      ? `${settings.email.nomExpediteur ?? 'SIH SaaS'} <${settings.email.emailExpediteur}>`
+      : this.from;
+    const contactSupport = settings.email.emailSupport
+      ? ` Pour toute question, contactez ${settings.email.emailSupport}.`
+      : '';
+
     const info = await this.transporter.sendMail({
-      from: this.from,
+      from,
       to: destinataire,
       subject: `Bienvenue sur SIH SaaS, ${nomEtablissement} !`,
-      text: `Votre établissement « ${nomEtablissement} » est prêt. Connectez-vous pour commencer à l'utiliser.`,
+      text: `Votre établissement « ${nomEtablissement} » est prêt. Connectez-vous pour commencer à l'utiliser.${contactSupport}`,
     });
 
     this.logger.log(`Email de bienvenue envoyé à ${destinataire} (messageId=${info.messageId})`);

@@ -43,6 +43,10 @@ export class PaymentEntity {
   @Column()
   devise: string;
 
+  /** Code coupon appliqué à l'initiation (Phase 16) — repris par ProvisioningService au webhook REUSSI. */
+  @Column({ type: 'varchar', nullable: true })
+  couponCode: string | null;
+
   @Column({ type: 'enum', enum: PaymentStatut, default: PaymentStatut.EN_ATTENTE })
   statut: PaymentStatut;
 
