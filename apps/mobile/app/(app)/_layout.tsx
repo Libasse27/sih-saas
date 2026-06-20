@@ -42,6 +42,13 @@ export default function AppLayout() {
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="message-text" color={color} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="profil"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account-circle" color={color} size={size} />,
+        }}
+      />
     </Tabs>
   );
 }

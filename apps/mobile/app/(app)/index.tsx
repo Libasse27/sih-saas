@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet } from 'react-native';
-import { ActivityIndicator, Button, Card, Text } from 'react-native-paper';
+import { ActivityIndicator, Card, Text } from 'react-native-paper';
 import * as facturesService from '../../src/api/factures.service';
 import * as rendezVousService from '../../src/api/rendez-vous.service';
-import { useAuth } from '../../src/auth/AuthContext';
 
 export default function AccueilScreen() {
-  const { logout } = useAuth();
   const rdvQuery = useQuery({ queryKey: ['rendez-vous', 'accueil'], queryFn: () => rendezVousService.findMine(1, 1) });
   const facturesQuery = useQuery({ queryKey: ['factures', 'accueil'], queryFn: () => facturesService.findMine(1, 1) });
 
@@ -45,10 +43,6 @@ export default function AccueilScreen() {
           )}
         </Card.Content>
       </Card>
-
-      <Button mode="outlined" onPress={logout} style={styles.deconnexion}>
-        Se déconnecter
-      </Button>
     </ScrollView>
   );
 }
@@ -56,5 +50,4 @@ export default function AccueilScreen() {
 const styles = StyleSheet.create({
   conteneur: { padding: 16, gap: 16 },
   carte: { marginTop: 8 },
-  deconnexion: { marginTop: 24 },
 });
