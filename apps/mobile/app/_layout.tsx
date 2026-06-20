@@ -58,7 +58,7 @@ function Navigation() {
     if (pret && estConnecte) {
       void enregistrerPourNotificationsPush();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [pret, estConnecte]);
 
   async function verifierBiometrie() {
@@ -76,6 +76,10 @@ function Navigation() {
 
   useEffect(() => {
     if (pret && estConnecte) {
+      // `verifEnCours` n'est pas une dépendance de cet effet : le setState synchrone en tête de
+      // `verifierBiometrie` (affichage du spinner pendant la lecture Keychain/Keystore + le prompt
+      // natif, tous deux asynchrones) ne peut donc pas déclencher de boucle de rendu.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       verifierBiometrie();
     } else {
       setVerifEnCours(false);

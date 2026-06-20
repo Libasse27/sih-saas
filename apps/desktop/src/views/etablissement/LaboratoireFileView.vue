@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DemandeStatut, Permission } from '@sih-saas/shared';
 import { message } from 'ant-design-vue';
-import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import * as laboratoireService from '../../services/laboratoire.service';
 import type { DemandeAnalyse } from '../../services/laboratoire.service';
 import { obtenirSocket } from '../../services/realtime';

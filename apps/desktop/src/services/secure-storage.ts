@@ -7,7 +7,6 @@
 const hasElectronBridge = typeof window !== 'undefined' && !!window.secureStore;
 
 if (typeof window !== 'undefined' && !hasElectronBridge) {
-  // eslint-disable-next-line no-console
   console.warn('[secure-storage] Pont Electron absent — repli sessionStorage (développement navigateur uniquement).');
 }
 

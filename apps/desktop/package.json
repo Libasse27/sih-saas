@@ -9,7 +9,9 @@
     "dev:electron": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
     "build": "vite build && tsc -p tsconfig.node.json",
     "typecheck": "vue-tsc --noEmit",
-    "preview": "vite preview"
+    "lint": "eslint . --ext .ts,.vue",
+    "preview": "vite preview",
+    "verify-gui": "node scripts/verify-gui.mjs"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
@@ -25,12 +27,18 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.0",
     "@types/node": "^20.16.5",
     "@types/qrcode": "^1.5.5",
     "@vitejs/plugin-vue": "^5.2.1",
     "concurrently": "^9.1.2",
     "electron": "^33.2.1",
+    "eslint": "^9.39.0",
+    "eslint-plugin-vue": "^10.9.2",
+    "globals": "^17.6.0",
+    "playwright-core": "^1.61.0",
     "typescript": "^5.5.4",
+    "typescript-eslint": "^8.61.1",
     "vite": "^5.4.11",
     "vue-tsc": "^2.2.0",
     "wait-on": "^8.0.1"

@@ -47,7 +47,7 @@ onMounted(async () => {
 <template>
   <a-spin :spinning="chargement">
     <a-row :gutter="16">
-      <a-col :span="4" v-for="statut in Object.values(EtablissementStatut)" :key="statut">
+      <a-col v-for="statut in Object.values(EtablissementStatut)" :key="statut" :span="4">
         <a-card size="small">
           <a-statistic :title="LIBELLE_STATUT[statut]" :value="statistiques?.etablissements[statut] ?? 0" />
         </a-card>

@@ -15,6 +15,7 @@
     "build:desktop": "pnpm --filter @sih-saas/desktop build",
     "dev:mobile": "pnpm --filter @sih-saas/mobile start",
     "dev:mobile:web": "pnpm --filter @sih-saas/mobile web",
+    "lint": "pnpm -r run lint",
     "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
     "docker:prod:up": "docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build",

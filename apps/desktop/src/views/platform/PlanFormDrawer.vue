@@ -129,7 +129,7 @@ async function soumettre(): Promise<void> {
       <a-divider>Modules cliniques inclus</a-divider>
       <a-checkbox-group v-model:value="formulaire.modules">
         <a-row>
-          <a-col :span="12" v-for="module in Object.values(ClinicalModule)" :key="module">
+          <a-col v-for="module in Object.values(ClinicalModule)" :key="module" :span="12">
             <a-checkbox :value="module">{{ LIBELLE_MODULE[module] }}</a-checkbox>
           </a-col>
         </a-row>

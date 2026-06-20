@@ -10,11 +10,13 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "build:check": "expo export"
   },
   "dependencies": {
     "@expo/metro-runtime": "~56.0.15",
     "@expo/vector-icons": "^15.1.1",
+    "@react-native-community/netinfo": "^11.4.1",
     "@sih-saas/shared": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
     "axios": "^1.18.0",
@@ -27,7 +29,6 @@
     "expo-secure-store": "~56.0.4",
     "expo-status-bar": "~56.0.4",
     "expo-web-browser": "~56.0.5",
-    "@react-native-community/netinfo": "^11.4.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -39,6 +40,8 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "babel-preset-expo": "^56.0.15",
+    "eslint": "^9.39.4",
+    "eslint-config-expo": "^56.0.4",
     "typescript": "~6.0.3"
   }
 }

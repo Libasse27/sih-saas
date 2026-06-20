@@ -11,10 +11,7 @@ env:
 
 jobs:
   build-test:
-    # Pas d'étape de lint : `eslint` est référencé dans apps/api/package.json mais n'a jamais été
-    # installé ni configuré dans ce dépôt (aucune dépendance ni fichier de config eslint) — à poser
-    # séparément plutôt que de faire échouer ce workflow dès le premier run.
-    name: Build, tests unitaires
+    name: Lint, build, tests unitaires
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +26,9 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Lint (api, desktop, mobile, shared)
+        run: pnpm -r run lint
 
       - name: Build packages/shared
         run: pnpm --filter @sih-saas/shared build
