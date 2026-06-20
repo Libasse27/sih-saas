@@ -1,4 +1,4 @@
-import { Sexe } from '@sih-saas/shared';
+import { Sexe, TypeConsentement } from '@sih-saas/shared';
 import {
   Column,
   CreateDateColumn,
@@ -15,10 +15,17 @@ export interface ContactUrgence {
   relation: string;
 }
 
+/**
+ * Historique append-only (jamais réécrit/écrasé, voir PatientsService.enregistrerConsentement,
+ * Phase 20) — l'état "actuel" d'un type donné est la DERNIÈRE entrée de ce type dans le tableau.
+ * `enregistrePar` = userId de qui a recueilli le consentement (le patient lui-même via le portail
+ * mobile, ou un membre du personnel à l'admission) — valeur probatoire en cas de contrôle CDP.
+ */
 export interface ConsentementEntry {
-  type: string;
+  type: TypeConsentement;
   date: string;
   valeur: boolean;
+  enregistrePar: string;
 }
 
 /**

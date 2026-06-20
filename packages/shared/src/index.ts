@@ -13,6 +13,7 @@ export * from './enums/laboratoire-imagerie.enum';
 export * from './enums/facturation-patient.enum';
 export * from './enums/support.enum';
 export * from './enums/coupon.enum';
+export * from './enums/consentement.enum';
 export * from './types/api-response';
 export * from './types/jwt-payload';
 export * from './types/plan';

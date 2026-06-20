@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role, Scope } from '@sih-saas/shared';
+import { Role, Scope, TypeConsentement } from '@sih-saas/shared';
 import { ILike, Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
@@ -116,6 +116,36 @@ export class PatientsService {
       action: 'patient.update',
       ressource: 'patient',
       ressourceId: patient.id,
+    });
+
+    return saved;
+  }
+
+  /**
+   * Historique append-only, jamais réécrit (Phase 20 — voir docs/conformite-rgpd-cdp.md) : chaque
+   * appel ajoute une nouvelle entrée, l'état "actuel" d'un type donné est la dernière entrée de ce
+   * type. `actingUserId` = le patient lui-même (portail mobile) ou un membre du personnel (admission).
+   */
+  async enregistrerConsentement(
+    patientId: string,
+    type: TypeConsentement,
+    valeur: boolean,
+    actingUserId: string,
+  ): Promise<PatientEntity> {
+    const patient = await this.findById(patientId);
+    patient.consentements = [
+      ...patient.consentements,
+      { type, valeur, date: new Date().toISOString(), enregistrePar: actingUserId },
+    ];
+    const saved = await this.repository.save(patient);
+
+    await this.auditService.log({
+      etablissementId: patient.etablissementId,
+      userId: actingUserId,
+      action: 'patient.consentement.enregistrer',
+      ressource: 'patient',
+      ressourceId: patient.id,
+      metadata: { type, valeur },
     });
 
     return saved;

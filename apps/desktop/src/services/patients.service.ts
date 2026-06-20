@@ -1,4 +1,4 @@
-import type { ApiResponse, Sexe } from '@sih-saas/shared';
+import type { ApiResponse, Sexe, TypeConsentement } from '@sih-saas/shared';
 import type { Paginated } from '../types/api';
 import { api } from './api';
 
@@ -6,6 +6,13 @@ export interface ContactUrgence {
   nom: string;
   telephone: string;
   relation: string;
+}
+
+export interface ConsentementEntry {
+  type: TypeConsentement;
+  date: string;
+  valeur: boolean;
+  enregistrePar: string;
 }
 
 export interface Patient {
@@ -19,6 +26,7 @@ export interface Patient {
   adresse: string | null;
   assuranceId: string | null;
   contactUrgence: ContactUrgence | null;
+  consentements: ConsentementEntry[];
   userId: string | null;
   createdAt: string;
 }
@@ -56,5 +64,10 @@ export async function create(dto: CreatePatientDto): Promise<Patient> {
 
 export async function update(id: string, dto: Partial<CreatePatientDto>): Promise<Patient> {
   const response = await api.patch<ApiResponse<Patient>>(`/patients/${id}`, dto);
+  return response.data.data;
+}
+
+export async function enregistrerConsentement(id: string, type: TypeConsentement, valeur: boolean): Promise<Patient> {
+  const response = await api.post<ApiResponse<Patient>>(`/patients/${id}/consentements`, { type, valeur });
   return response.data.data;
 }

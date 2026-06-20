@@ -1,5 +1,5 @@
 import { ConflictException } from '@nestjs/common';
-import { Role, Scope, Sexe } from '@sih-saas/shared';
+import { Role, Scope, Sexe, TypeConsentement } from '@sih-saas/shared';
 import { ILike } from 'typeorm';
 import { PatientEntity } from '../infrastructure/entities/patient.entity';
 import { PatientsService } from './patients.service';
@@ -103,6 +103,46 @@ describe('PatientsService', () => {
       await expect(
         service.creerCompteAcces('patient-1', { email: 'x@example.sn', password: 'Password123!' }, 'staff-1'),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('enregistrerConsentement (Phase 20)', () => {
+    it('ajoute une nouvelle entrée sans jamais écraser l’historique existant', async () => {
+      repository.findOne.mockResolvedValue({
+        id: 'patient-1',
+        etablissementId: 'etab-1',
+        consentements: [
+          { type: TypeConsentement.TRAITEMENT_DONNEES_SANTE, valeur: false, date: '2026-01-01T00:00:00.000Z', enregistrePar: 'staff-0' },
+        ],
+      } as PatientEntity);
+
+      const saved = await service.enregistrerConsentement(
+        'patient-1',
+        TypeConsentement.TRAITEMENT_DONNEES_SANTE,
+        true,
+        'staff-1',
+      );
+
+      expect(saved.consentements).toHaveLength(2);
+      expect(saved.consentements[0].valeur).toBe(false);
+      expect(saved.consentements[1]).toEqual(
+        expect.objectContaining({ type: TypeConsentement.TRAITEMENT_DONNEES_SANTE, valeur: true, enregistrePar: 'staff-1' }),
+      );
+    });
+
+    it('journalise qui a enregistré quel consentement', async () => {
+      repository.findOne.mockResolvedValue({ id: 'patient-1', etablissementId: 'etab-1', consentements: [] } as unknown as PatientEntity);
+
+      await service.enregistrerConsentement('patient-1', TypeConsentement.PARTAGE_ASSURANCE, true, 'patient-user-1');
+
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'patient.consentement.enregistrer',
+          etablissementId: 'etab-1',
+          userId: 'patient-user-1',
+          metadata: { type: TypeConsentement.PARTAGE_ASSURANCE, valeur: true },
+        }),
+      );
     });
   });
 });

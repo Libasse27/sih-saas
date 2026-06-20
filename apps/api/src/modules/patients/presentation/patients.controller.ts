@@ -10,6 +10,7 @@ import { PaginationQueryDto } from '../../../shared/dto/pagination-query.dto';
 import { PatientsService } from '../application/patients.service';
 import { CreatePatientAccesDto } from './dto/create-patient-acces.dto';
 import { CreatePatientDto } from './dto/create-patient.dto';
+import { EnregistrerConsentementDto } from './dto/enregistrer-consentement.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 
 class FindPatientsQueryDto extends PaginationQueryDto {
@@ -50,6 +51,18 @@ export class PatientsController {
       throw new NotFoundException('Aucun dossier patient associé à ce compte.');
     }
     return patient;
+  }
+
+  /** Déclarée avant `:id/consentements` — même précaution que `me` ci-dessus. */
+  @Post('me/consentements')
+  @Scopes(Scope.PATIENT)
+  @ResponseMessage('Consentement enregistré.')
+  async enregistrerMonConsentement(@Body() dto: EnregistrerConsentementDto, @CurrentUser() currentUser: JwtPayload) {
+    const patient = await this.patientsService.findByUserId(currentUser.sub);
+    if (!patient) {
+      throw new NotFoundException('Aucun dossier patient associé à ce compte.');
+    }
+    return this.patientsService.enregistrerConsentement(patient.id, dto.type, dto.valeur, currentUser.sub);
   }
 
   /**
@@ -99,5 +112,18 @@ export class PatientsController {
     @CurrentUser() currentUser: JwtPayload,
   ) {
     return this.patientsService.creerCompteAcces(id, dto, currentUser.sub);
+  }
+
+  /** Enregistré par le personnel (admission) — pour le patient lui-même, voir POST /patients/me/consentements. */
+  @Post(':id/consentements')
+  @Scopes(Scope.ETABLISSEMENT)
+  @RequirePermissions(Permission.PATIENT_CREATE)
+  @ResponseMessage('Consentement enregistré.')
+  enregistrerConsentement(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: EnregistrerConsentementDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.patientsService.enregistrerConsentement(id, dto.type, dto.valeur, currentUser.sub);
   }
 }
