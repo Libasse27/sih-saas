@@ -47,6 +47,10 @@ export class PaymentEntity {
   @Column({ type: 'varchar', nullable: true })
   couponCode: string | null;
 
+  /** Identifiant CÔTÉ FOURNISSEUR (session Wave, pay_token Orange Money) — requis pour rembourser(), jamais notre `reference`. */
+  @Column({ type: 'varchar', nullable: true })
+  providerReference: string | null;
+
   @Column({ type: 'enum', enum: PaymentStatut, default: PaymentStatut.EN_ATTENTE })
   statut: PaymentStatut;
 

@@ -10,7 +10,6 @@ import { Scopes } from '../../../shared/decorators/scopes.decorator';
 import { PatientsService } from '../../patients/application/patients.service';
 import { PlanFeatureGuard } from '../../subscriptions/domain/plan-feature.guard';
 import { RequirePlanFeature } from '../../subscriptions/domain/require-plan-feature.decorator';
-import { WebhookPayloadDto } from '../../payments/presentation/dto/webhook-payload.dto';
 import { FacturesPatientService } from '../application/factures-patient.service';
 import { PaiementsPatientService } from '../application/paiements-patient.service';
 import { CreatePaiementPatientDto } from './dto/create-paiement-patient.dto';
@@ -64,17 +63,14 @@ export class PaiementsPatientController {
     return this.paiementsPatientService.findByFacture(facturePatientId);
   }
 
+  // @Body() volontairement absent : chaque fournisseur a son propre format de payload (voir
+  // payments.controller.ts, même convention).
   @Public()
   @Post('paiements-patient/webhook/:provider')
   @ResponseMessage('Webhook traité.')
-  async webhook(
-    @Param('provider') provider: string,
-    @Req() req: RawBodyRequest<Request>,
-    @Headers('x-sandbox-signature') signature: string | undefined,
-    @Body() payload: WebhookPayloadDto,
-  ) {
-    const rawBody = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(payload);
-    await this.paiementsPatientService.handleWebhook(provider, rawBody, signature, payload);
+  async webhook(@Param('provider') provider: string, @Req() req: RawBodyRequest<Request>, @Headers() headers: Record<string, string>) {
+    const rawBody = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
+    await this.paiementsPatientService.handleWebhook(provider, rawBody, headers);
     return { recu: true };
   }
 

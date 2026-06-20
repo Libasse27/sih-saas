@@ -1,6 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentProviderType } from '@sih-saas/shared';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
+
+/** Seules les passerelles réellement implémentées (PaymentGatewayRegistry) — STRIPE/CARTE existent dans l'enum mais échoueraient à l'usage. */
+const PASSERELLES_IMPLEMENTEES = [PaymentProviderType.SANDBOX, PaymentProviderType.WAVE, PaymentProviderType.ORANGE_MONEY];
 
 class SettingEmailDto {
   @ApiPropertyOptional()
@@ -24,6 +28,11 @@ class SettingPaiementsDto {
   @IsOptional()
   @IsBoolean()
   actifs?: boolean;
+
+  @ApiPropertyOptional({ enum: PASSERELLES_IMPLEMENTEES })
+  @IsOptional()
+  @IsIn(PASSERELLES_IMPLEMENTEES)
+  passerelleActive?: PaymentProviderType;
 }
 
 export class UpdateSettingsDto {

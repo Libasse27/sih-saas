@@ -2,6 +2,8 @@ export default () => ({
   env: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
   apiPrefix: process.env.API_PREFIX ?? 'api',
+  // Base publique de l'API — utilisée pour construire les callbacks de webhook (notif_url Orange Money).
+  apiPublicUrl: process.env.API_PUBLIC_URL ?? 'http://localhost:3000',
   // Whitelist CORS (Phase 11) : la console desktop (Vite) en dev, le(s) domaine(s) de prod en liste séparée par virgules.
   // Pas de CORS pour le mobile (React Native n'exécute pas dans un contexte navigateur) ni pour les clés API FHIR (server-to-server).
   corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',').map((origin) => origin.trim()),
@@ -46,7 +48,23 @@ export default () => ({
   },
 
   payments: {
-    // Seule la passerelle SANDBOX est câblée pour l'instant — voir docs/phase-0/plan-de-phases.md Phase 4.
     sandboxWebhookSecret: process.env.PAYMENT_SANDBOX_WEBHOOK_SECRET ?? 'sandbox-dev-secret-change-me',
+    // Pages de retour après paiement (Wave success_url/error_url, Orange Money return_url/cancel_url).
+    successUrl: process.env.PAYMENT_SUCCESS_URL ?? 'https://sih-saas.local/paiement/succes',
+    errorUrl: process.env.PAYMENT_ERROR_URL ?? 'https://sih-saas.local/paiement/echec',
+    // Wave Business Checkout (Phase 17) — https://docs.wave.com/checkout. Aucune vraie credential
+    // fournie encore : volontairement undefined tant que WAVE_API_KEY n'est pas renseignée.
+    wave: {
+      apiKey: process.env.WAVE_API_KEY,
+      webhookSecret: process.env.WAVE_WEBHOOK_SECRET,
+    },
+    // Orange Money Web Payment (Phase 17) — contrat reconstruit depuis des SDK tiers (pas de doc
+    // partenaire officielle accessible), à reconfirmer dès l'obtention d'un vrai accès partenaire.
+    orangeMoney: {
+      clientId: process.env.ORANGE_MONEY_CLIENT_ID,
+      clientSecret: process.env.ORANGE_MONEY_CLIENT_SECRET,
+      merchantKey: process.env.ORANGE_MONEY_MERCHANT_KEY,
+      env: process.env.ORANGE_MONEY_ENV ?? 'dev',
+    },
   },
 });

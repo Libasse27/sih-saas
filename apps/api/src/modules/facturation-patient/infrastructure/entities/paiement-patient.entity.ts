@@ -41,6 +41,10 @@ export class PaiementPatientEntity {
   @Column({ type: 'jsonb', nullable: true })
   rawPayload: Record<string, unknown> | null;
 
+  /** Identifiant côté fournisseur (Phase 17) — null pour un encaissement CAISSE. */
+  @Column({ type: 'varchar', nullable: true })
+  providerReference: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

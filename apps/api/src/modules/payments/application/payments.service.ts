@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Periodicite, PaymentStatut } from '@sih-saas/shared';
+import { Periodicite, PaymentProviderType, PaymentStatut } from '@sih-saas/shared';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
@@ -8,10 +8,9 @@ import { CouponsService } from '../../coupons/application/coupons.service';
 import { PlansService } from '../../plans/application/plans.service';
 import { ProvisioningService } from '../../provisioning/application/provisioning.service';
 import { SettingsService } from '../../settings/application/settings.service';
-import { SandboxPaymentGateway } from '../infrastructure/providers/sandbox-payment-gateway';
+import { PaymentGatewayRegistry } from '../infrastructure/providers/payment-gateway-registry';
 import { PaymentEntity } from '../infrastructure/entities/payment.entity';
 import { InitierPaymentDto } from '../presentation/dto/initier-payment.dto';
-import { WebhookPayloadDto } from '../presentation/dto/webhook-payload.dto';
 
 export interface InitierPaymentResult {
   reference: string;
@@ -20,15 +19,19 @@ export interface InitierPaymentResult {
   devise: string;
 }
 
-/** Seule la passerelle SANDBOX est branchée pour l'instant (voir sandbox-payment-gateway.ts). */
-const PROVIDER_PARAM_SANDBOX = 'sandbox';
+/** Segments d'URL (kebab-case) -> enum — voir aussi paiements-patient (Flux B, même convention). */
+export const PROVIDER_PARAM_VERS_TYPE: Record<string, PaymentProviderType> = {
+  sandbox: PaymentProviderType.SANDBOX,
+  wave: PaymentProviderType.WAVE,
+  'orange-money': PaymentProviderType.ORANGE_MONEY,
+};
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @InjectRepository(PaymentEntity) private readonly repository: Repository<PaymentEntity>,
     private readonly plansService: PlansService,
-    private readonly gateway: SandboxPaymentGateway,
+    private readonly gatewayRegistry: PaymentGatewayRegistry,
     private readonly provisioningService: ProvisioningService,
     private readonly auditService: AuditService,
     private readonly couponsService: CouponsService,
@@ -53,13 +56,14 @@ export class PaymentsService {
     }
 
     const reference = randomUUID();
+    const gateway = this.gatewayRegistry.get(settings.paiements.passerelleActive ?? PaymentProviderType.SANDBOX);
 
     await this.repository.save(
       this.repository.create({
         etablissementId: dto.etablissementId,
         planId: dto.planId,
         periodicite: dto.periodicite,
-        provider: this.gateway.type,
+        provider: gateway.type,
         reference,
         montant,
         devise: plan.tarifs.devise,
@@ -68,33 +72,42 @@ export class PaymentsService {
       }),
     );
 
-    const { redirectUrl } = await this.gateway.initier({
+    const { redirectUrl, providerReference } = await gateway.initier({
       reference,
       montant,
       devise: plan.tarifs.devise,
       etablissementId: dto.etablissementId,
     });
+    await this.repository.update({ reference }, { providerReference });
 
     await this.auditService.log({
       etablissementId: dto.etablissementId,
       action: 'payment.initier',
       ressource: 'payment',
-      metadata: { reference, montant, planId: dto.planId, couponCode },
+      metadata: { reference, montant, planId: dto.planId, couponCode, provider: gateway.type },
     });
 
     return { reference, redirectUrl, montant, devise: plan.tarifs.devise };
   }
 
-  async handleWebhook(providerParam: string, rawBody: string, signature: string | undefined, payload: WebhookPayloadDto): Promise<void> {
-    if (providerParam.toLowerCase() !== PROVIDER_PARAM_SANDBOX) {
+  async handleWebhook(
+    providerParam: string,
+    rawBody: string,
+    headers: Record<string, string | undefined>,
+  ): Promise<void> {
+    const providerType = PROVIDER_PARAM_VERS_TYPE[providerParam.toLowerCase()];
+    if (!providerType) {
       throw new NotFoundException(`Passerelle "${providerParam}" non configurée.`);
     }
+    const gateway = this.gatewayRegistry.get(providerType);
 
-    if (!this.gateway.verifierWebhook(rawBody, signature)) {
+    if (!(await gateway.verifierWebhook(rawBody, headers))) {
       throw new UnauthorizedException('Signature de webhook invalide.');
     }
 
-    const payment = await this.repository.findOne({ where: { reference: payload.reference } });
+    const { reference, statut } = await gateway.extraireStatutPaiement(rawBody, headers);
+
+    const payment = await this.repository.findOne({ where: { reference } });
     if (!payment) {
       throw new NotFoundException('Paiement introuvable.');
     }
@@ -104,7 +117,7 @@ export class PaymentsService {
       return;
     }
 
-    payment.statut = payload.statut === 'REUSSI' ? PaymentStatut.REUSSI : PaymentStatut.ECHOUE;
+    payment.statut = statut === 'REUSSI' ? PaymentStatut.REUSSI : PaymentStatut.ECHOUE;
     payment.rawPayload = JSON.parse(rawBody);
     await this.repository.save(payment);
 

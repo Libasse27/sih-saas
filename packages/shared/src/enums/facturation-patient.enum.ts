@@ -20,3 +20,15 @@ export enum ModePaiementPatient {
   WAVE = 'WAVE',
   CARTE = 'CARTE',
 }
+
+/**
+ * Tiers-payant (Phase 17) : suivi interne des créances assurance — AUCUNE API assureur publique
+ * n'existe pour CMU/IPM/mutuelles au Sénégal, ce workflow remplace le suivi papier, il n'automatise
+ * aucun encaissement réel auprès de l'assureur.
+ */
+export enum StatutCreanceAssurance {
+  A_SOUMETTRE = 'A_SOUMETTRE',
+  SOUMISE = 'SOUMISE',
+  PAYEE = 'PAYEE',
+  REJETEE = 'REJETEE',
+}

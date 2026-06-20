@@ -132,6 +132,10 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.FACTURE_PATIENT_CREATE,
     Permission.FACTURE_PATIENT_VALIDATE,
     Permission.PAIEMENT_PATIENT_CREATE,
+    // ASSURANCE_MANAGE existait dans l'enum + gardait AssurancesController depuis la Phase 8 mais
+    // n'était seedée à AUCUN rôle (bug découvert Phase 17) — le caissier est l'acteur naturel,
+    // même périmètre que le suivi des créances assurance (CreancesAssuranceController).
+    Permission.ASSURANCE_MANAGE,
   ],
   [Role.GESTIONNAIRE_LITS]: [Permission.LIT_VIEW, Permission.LIT_ASSIGN, Permission.LIT_LIBERER],
   [Role.ASSISTANT_SOCIAL]: [Permission.SOCIAL_MANAGE, Permission.DOSSIER_READ],

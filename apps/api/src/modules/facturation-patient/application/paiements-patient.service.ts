@@ -1,10 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { FacturePatientStatut, ModePaiementPatient, PaymentStatut } from '@sih-saas/shared';
+import { FacturePatientStatut, ModePaiementPatient, PaymentProviderType, PaymentStatut } from '@sih-saas/shared';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
-import { SandboxPaymentGateway } from '../../payments/infrastructure/providers/sandbox-payment-gateway';
-import { WebhookPayloadDto } from '../../payments/presentation/dto/webhook-payload.dto';
+import { PaymentGatewayRegistry } from '../../payments/infrastructure/providers/payment-gateway-registry';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
 import { PaiementPatientEntity } from '../infrastructure/entities/paiement-patient.entity';
 import { CreatePaiementPatientDto } from '../presentation/dto/create-paiement-patient.dto';
@@ -15,11 +14,23 @@ export interface CreatePaiementPatientResult {
   redirectUrl?: string;
 }
 
-const PROVIDER_PARAM_SANDBOX = 'sandbox';
+/** Segments d'URL (kebab-case) -> enum — même convention que payments.service.ts (Flux A). */
+export const PROVIDER_PARAM_VERS_TYPE: Record<string, PaymentProviderType> = {
+  sandbox: PaymentProviderType.SANDBOX,
+  wave: PaymentProviderType.WAVE,
+  'orange-money': PaymentProviderType.ORANGE_MONEY,
+};
+
+/** Mode de paiement choisi par le patient/caissier -> passerelle technique (Phase 17, pas de Settings ici : le choix est par transaction, pas une configuration plateforme). */
+const MODE_VERS_PROVIDER: Partial<Record<ModePaiementPatient, PaymentProviderType>> = {
+  [ModePaiementPatient.ORANGE_MONEY]: PaymentProviderType.ORANGE_MONEY,
+  [ModePaiementPatient.WAVE]: PaymentProviderType.WAVE,
+  [ModePaiementPatient.CARTE]: PaymentProviderType.CARTE,
+};
 
 /**
- * Flux soins (patient -> établissement) — réutilise SandboxPaymentGateway (infra partagée avec le
- * flux abonnement, PaymentsModule Phase 4) mais reste strictement séparé en modèle/endpoint/reporting
+ * Flux soins (patient -> établissement) — réutilise PaymentGatewayRegistry (infra partagée avec le
+ * flux abonnement, PaymentsModule Phase 4/17) mais reste strictement séparé en modèle/endpoint/reporting
  * (prompt maître §15). `clinic.paiements_patient` est protégée par RLS.
  */
 @Injectable()
@@ -27,7 +38,7 @@ export class PaiementsPatientService {
   constructor(
     private readonly tenantContext: TenantContextService,
     private readonly facturesPatientService: FacturesPatientService,
-    private readonly gateway: SandboxPaymentGateway,
+    private readonly gatewayRegistry: PaymentGatewayRegistry,
     private readonly auditService: AuditService,
   ) {}
 
@@ -70,6 +81,25 @@ export class PaiementsPatientService {
       }),
     );
 
+    if (estEspece) {
+      await this.recalculerFacture(facturePatientId);
+      return { paiement };
+    }
+
+    const providerType = MODE_VERS_PROVIDER[dto.mode];
+    if (!providerType) {
+      throw new BadRequestException(`Mode de paiement "${dto.mode}" non pris en charge.`);
+    }
+    const gateway = this.gatewayRegistry.get(providerType);
+
+    const { redirectUrl, providerReference } = await gateway.initier({
+      reference,
+      montant: dto.montant,
+      devise: 'XOF',
+      etablissementId,
+    });
+    await this.repository.update({ reference }, { providerReference });
+
     await this.auditService.log({
       etablissementId,
       userId: actingUserId,
@@ -79,35 +109,23 @@ export class PaiementsPatientService {
       metadata: { facturePatientId, montant: dto.montant, mode: dto.mode },
     });
 
-    if (estEspece) {
-      await this.recalculerFacture(facturePatientId);
-      return { paiement };
-    }
-
-    const { redirectUrl } = await this.gateway.initier({
-      reference,
-      montant: dto.montant,
-      devise: 'XOF',
-      etablissementId,
-    });
-
     return { paiement, redirectUrl };
   }
 
-  async handleWebhook(
-    providerParam: string,
-    rawBody: string,
-    signature: string | undefined,
-    payload: WebhookPayloadDto,
-  ): Promise<void> {
-    if (providerParam.toLowerCase() !== PROVIDER_PARAM_SANDBOX) {
+  async handleWebhook(providerParam: string, rawBody: string, headers: Record<string, string | undefined>): Promise<void> {
+    const providerType = PROVIDER_PARAM_VERS_TYPE[providerParam.toLowerCase()];
+    if (!providerType) {
       throw new NotFoundException(`Passerelle "${providerParam}" non configurée.`);
     }
-    if (!this.gateway.verifierWebhook(rawBody, signature)) {
+    const gateway = this.gatewayRegistry.get(providerType);
+
+    if (!(await gateway.verifierWebhook(rawBody, headers))) {
       throw new UnauthorizedException('Signature de webhook invalide.');
     }
 
-    const paiement = await this.repository.findOne({ where: { reference: payload.reference } });
+    const { reference, statut } = await gateway.extraireStatutPaiement(rawBody, headers);
+
+    const paiement = await this.repository.findOne({ where: { reference } });
     if (!paiement) {
       throw new NotFoundException('Paiement introuvable.');
     }
@@ -117,7 +135,7 @@ export class PaiementsPatientService {
       return;
     }
 
-    paiement.statut = payload.statut === 'REUSSI' ? PaymentStatut.REUSSI : PaymentStatut.ECHOUE;
+    paiement.statut = statut === 'REUSSI' ? PaymentStatut.REUSSI : PaymentStatut.ECHOUE;
     paiement.rawPayload = JSON.parse(rawBody);
     await this.repository.save(paiement);
 

@@ -26,26 +26,36 @@ describe('SandboxPaymentGateway', () => {
     expect(result.providerReference).toBe('ref-123');
   });
 
-  it('valide une signature HMAC correcte', () => {
+  it('valide une signature HMAC correcte', async () => {
     const body = JSON.stringify({ reference: 'ref-123', statut: 'REUSSI' });
-    expect(gateway.verifierWebhook(body, sign(body))).toBe(true);
+    await expect(gateway.verifierWebhook(body, { 'x-sandbox-signature': sign(body) })).resolves.toBe(true);
   });
 
-  it('rejette une signature incorrecte', () => {
+  it('rejette une signature incorrecte', async () => {
     const body = JSON.stringify({ reference: 'ref-123', statut: 'REUSSI' });
-    expect(gateway.verifierWebhook(body, sign('payload-different'))).toBe(false);
+    await expect(
+      gateway.verifierWebhook(body, { 'x-sandbox-signature': sign('payload-different') }),
+    ).resolves.toBe(false);
   });
 
-  it('rejette une signature absente', () => {
+  it('rejette une signature absente', async () => {
     const body = JSON.stringify({ reference: 'ref-123', statut: 'REUSSI' });
-    expect(gateway.verifierWebhook(body, undefined)).toBe(false);
+    await expect(gateway.verifierWebhook(body, {})).resolves.toBe(false);
   });
 
-  it('rejette un corps modifié après signature (intégrité)', () => {
+  it('rejette un corps modifié après signature (intégrité)', async () => {
     const original = JSON.stringify({ reference: 'ref-123', statut: 'REUSSI' });
     const signature = sign(original);
     const tampered = JSON.stringify({ reference: 'ref-123', statut: 'ECHOUE' });
 
-    expect(gateway.verifierWebhook(tampered, signature)).toBe(false);
+    await expect(gateway.verifierWebhook(tampered, { 'x-sandbox-signature': signature })).resolves.toBe(false);
+  });
+
+  it('extraireStatutPaiement lit reference/statut depuis le corps brut', async () => {
+    const body = JSON.stringify({ reference: 'ref-123', statut: 'REUSSI' });
+    await expect(gateway.extraireStatutPaiement(body, {})).resolves.toEqual({
+      reference: 'ref-123',
+      statut: 'REUSSI',
+    });
   });
 });

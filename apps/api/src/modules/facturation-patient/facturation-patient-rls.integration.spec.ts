@@ -9,7 +9,8 @@ import { dataSourceOptions } from '../../database/data-source';
  * Référence : docs/phase-0/strategie-isolation.md §7, plan-de-phases.md Phase 8.
  */
 describe('Isolation RLS — tables Phase 8 (intégration Postgres réelle)', () => {
-  const tables = ['assurances', 'factures_patient', 'paiements_patient'];
+  // creances_assurance (Phase 17, tiers-payant) ajoutée ici : même module, même convention RLS.
+  const tables = ['assurances', 'factures_patient', 'paiements_patient', 'creances_assurance'];
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -96,6 +97,69 @@ describe('Isolation RLS — tables Phase 8 (intégration Postgres réelle)', () 
              (etablissement_id, patient_id, numero, lignes, montant_total, part_assurance, part_patient, date_emission)
            VALUES ($1, $2, $3, '[]'::jsonb, 1000, 0, 1000, now())`,
           [etabB, randomUUID(), `FRAUDE-${randomUUID().slice(0, 6)}`],
+        ),
+      ).rejects.toThrow();
+
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+    });
+  });
+
+  describe('comportement (lecture/écriture) sur clinic.creances_assurance', () => {
+    const etabA = randomUUID();
+    const etabB = randomUUID();
+
+    async function insertAs(etablissementId: string): Promise<void> {
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      await queryRunner.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [etablissementId]);
+      await queryRunner.query(
+        `INSERT INTO "clinic"."creances_assurance" (etablissement_id, facture_patient_id, assurance_id, montant)
+         VALUES ($1, $2, $3, 50000)`,
+        [etablissementId, randomUUID(), randomUUID()],
+      );
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+    }
+
+    async function countAs(etablissementId: string): Promise<number> {
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      await queryRunner.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [etablissementId]);
+      const rows = await queryRunner.query(`SELECT id FROM "clinic"."creances_assurance"`);
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+      return rows.length;
+    }
+
+    afterAll(async () => {
+      await dataSource.query(`DELETE FROM "clinic"."creances_assurance" WHERE etablissement_id IN ($1, $2)`, [
+        etabA,
+        etabB,
+      ]);
+    });
+
+    it("l'établissement A ne voit jamais les créances assurance de l'établissement B", async () => {
+      await insertAs(etabA);
+      await insertAs(etabB);
+
+      expect(await countAs(etabA)).toBe(1);
+      expect(await countAs(etabB)).toBe(1);
+    });
+
+    it('rejette un INSERT avec un etablissement_id falsifié (policy WITH CHECK)', async () => {
+      const queryRunner = dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      await queryRunner.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [etabA]);
+
+      await expect(
+        queryRunner.query(
+          `INSERT INTO "clinic"."creances_assurance" (etablissement_id, facture_patient_id, assurance_id, montant)
+           VALUES ($1, $2, $3, 50000)`,
+          [etabB, randomUUID(), randomUUID()],
         ),
       ).rejects.toThrow();
 

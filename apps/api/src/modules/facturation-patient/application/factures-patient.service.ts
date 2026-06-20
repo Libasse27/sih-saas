@@ -8,6 +8,7 @@ import { genererNumeroFacture } from '../domain/facture-numero-generator';
 import { FacturePatientEntity } from '../infrastructure/entities/facture-patient.entity';
 import { CreateFacturePatientDto } from '../presentation/dto/create-facture-patient.dto';
 import { AssurancesService } from './assurances.service';
+import { CreancesAssuranceService } from './creances-assurance.service';
 
 export interface PaginatedResult<T> {
   items: T[];
@@ -28,6 +29,7 @@ export class FacturesPatientService {
     private readonly etablissementsService: EtablissementsService,
     private readonly assurancesService: AssurancesService,
     private readonly auditService: AuditService,
+    private readonly creancesAssuranceService: CreancesAssuranceService,
   ) {}
 
   private get repository(): Repository<FacturePatientEntity> {
@@ -68,6 +70,11 @@ export class FacturesPatientService {
       ressourceId: facture.id,
       metadata: { patientId, numero, montantTotal, partAssurance, partPatient },
     });
+
+    // Tiers-payant (Phase 17) : une créance à suivre dès qu'une assurance couvre une partie de la facture.
+    if (partAssurance > 0 && assurance) {
+      await this.creancesAssuranceService.creerPourFacture(facture.id, assurance.id, partAssurance);
+    }
 
     return facture;
   }

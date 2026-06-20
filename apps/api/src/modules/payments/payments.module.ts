@@ -7,7 +7,10 @@ import { ProvisioningModule } from '../provisioning/provisioning.module';
 import { SettingsModule } from '../settings/settings.module';
 import { PaymentsService } from './application/payments.service';
 import { PaymentEntity } from './infrastructure/entities/payment.entity';
+import { OrangeMoneyPaymentGateway } from './infrastructure/providers/orange-money-payment-gateway';
+import { PaymentGatewayRegistry } from './infrastructure/providers/payment-gateway-registry';
 import { SandboxPaymentGateway } from './infrastructure/providers/sandbox-payment-gateway';
+import { WavePaymentGateway } from './infrastructure/providers/wave-payment-gateway';
 import { PaymentsController } from './presentation/payments.controller';
 
 @Module({
@@ -20,9 +23,9 @@ import { PaymentsController } from './presentation/payments.controller';
     SettingsModule,
   ],
   controllers: [PaymentsController],
-  providers: [PaymentsService, SandboxPaymentGateway],
-  // SandboxPaymentGateway exporté pour être réutilisé par FacturationPatientModule (flux soins,
+  providers: [PaymentsService, SandboxPaymentGateway, WavePaymentGateway, OrangeMoneyPaymentGateway, PaymentGatewayRegistry],
+  // PaymentGatewayRegistry exporté pour être réutilisé par FacturationPatientModule (flux soins,
   // infra partagée mais modèles/endpoints strictement séparés — prompt maître §15).
-  exports: [PaymentsService, SandboxPaymentGateway],
+  exports: [PaymentsService, PaymentGatewayRegistry],
 })
 export class PaymentsModule {}

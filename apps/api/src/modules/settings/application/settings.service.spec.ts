@@ -1,3 +1,4 @@
+import { PaymentProviderType } from '@sih-saas/shared';
 import { SettingEntity } from '../infrastructure/entities/setting.entity';
 import { SettingsService } from './settings.service';
 
@@ -26,10 +27,11 @@ describe('SettingsService', () => {
 
       expect(settings.id).toBe(SETTINGS_ID);
       expect(settings.paiements.actifs).toBe(true);
+      expect(settings.paiements.passerelleActive).toBe(PaymentProviderType.SANDBOX);
       expect(repository.save).toHaveBeenCalled();
     });
 
-    it('réutilise la ligne existante sans la recréer', async () => {
+    it('réutilise la ligne existante sans la recréer (y compris une ligne pré-Phase 17 sans passerelleActive)', async () => {
       const existing = {
         id: SETTINGS_ID,
         email: { nomExpediteur: 'SIH', emailExpediteur: 'a@b.sn', emailSupport: null },
@@ -40,6 +42,7 @@ describe('SettingsService', () => {
       const settings = await service.getOrCreate();
 
       expect(settings).toBe(existing);
+      expect(settings.paiements.passerelleActive).toBeUndefined();
       expect(repository.save).not.toHaveBeenCalled();
     });
   });

@@ -8,6 +8,7 @@ describe('FacturesPatientService', () => {
   let etablissementsService: { findById: jest.Mock; incrementerCompteur: jest.Mock };
   let assurancesService: { findActivePourPatient: jest.Mock };
   let auditService: { log: jest.Mock };
+  let creancesAssuranceService: { creerPourFacture: jest.Mock };
   let service: FacturesPatientService;
 
   beforeEach(() => {
@@ -27,12 +28,14 @@ describe('FacturesPatientService', () => {
     };
     assurancesService = { findActivePourPatient: jest.fn().mockResolvedValue(null) };
     auditService = { log: jest.fn() };
+    creancesAssuranceService = { creerPourFacture: jest.fn().mockResolvedValue(undefined) };
 
     service = new FacturesPatientService(
       tenantContext as any,
       etablissementsService as any,
       assurancesService as any,
       auditService as any,
+      creancesAssuranceService as any,
     );
   });
 
@@ -45,10 +48,11 @@ describe('FacturesPatientService', () => {
     expect(facture.partAssurance).toBe(0);
     expect(facture.partPatient).toBe(15000);
     expect(facture.numero).toBe('HMS-FACT-' + new Date().getFullYear() + '-000045');
+    expect(creancesAssuranceService.creerPourFacture).not.toHaveBeenCalled();
   });
 
-  it('avec assurance active à 80% : part_assurance = 80%, part_patient = reste à charge', async () => {
-    assurancesService.findActivePourPatient.mockResolvedValue({ tauxCouverture: 80 });
+  it('avec assurance active à 80% : part_assurance = 80%, part_patient = reste à charge, créance créée', async () => {
+    assurancesService.findActivePourPatient.mockResolvedValue({ id: 'assurance-1', tauxCouverture: 80 });
 
     const facture = await service.create(
       'patient-1',
@@ -58,6 +62,7 @@ describe('FacturesPatientService', () => {
 
     expect(facture.partAssurance).toBe(80000);
     expect(facture.partPatient).toBe(20000);
+    expect(creancesAssuranceService.creerPourFacture).toHaveBeenCalledWith('facture-1', 'assurance-1', 80000);
   });
 
   it('annuler() refuse si la facture est déjà PAYEE', async () => {

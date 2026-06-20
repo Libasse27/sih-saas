@@ -6,6 +6,7 @@ import {
   InitierPaymentInput,
   InitierPaymentOutput,
   PaymentGateway,
+  StatutPaiementExtrait,
 } from '../../domain/payment-gateway.interface';
 
 /**
@@ -27,7 +28,8 @@ export class SandboxPaymentGateway implements PaymentGateway {
     };
   }
 
-  verifierWebhook(rawBody: string, signature: string | undefined): boolean {
+  async verifierWebhook(rawBody: string, headers: Record<string, string | undefined>): Promise<boolean> {
+    const signature = headers['x-sandbox-signature'];
     if (!signature) {
       return false;
     }
@@ -44,7 +46,12 @@ export class SandboxPaymentGateway implements PaymentGateway {
     return crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
   }
 
-  async rembourser(): Promise<void> {
+  async extraireStatutPaiement(rawBody: string, _headers: Record<string, string | undefined>): Promise<StatutPaiementExtrait> {
+    const payload = JSON.parse(rawBody) as { reference: string; statut: 'REUSSI' | 'ECHOUE' };
+    return { reference: payload.reference, statut: payload.statut };
+  }
+
+  async rembourser(_providerReference: string, _montant?: number): Promise<void> {
     // Pas de mouvement d'argent réel en sandbox — no-op volontaire.
   }
 }

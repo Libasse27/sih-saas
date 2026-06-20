@@ -72,6 +72,9 @@ const menuItems = computed(() => {
   if (auth.aPermission(Permission.FACTURE_PATIENT_CREATE)) {
     items.push({ key: 'etablissement-facturation', label: 'Facturation', icon: DollarOutlined });
   }
+  if (auth.aPermission(Permission.ASSURANCE_MANAGE)) {
+    items.push({ key: 'etablissement-creances-assurance', label: 'Créances assurance', icon: DollarOutlined });
+  }
   if (auth.aPermission(Permission.MESSAGE_READ)) {
     items.push({ key: 'etablissement-messages', label: 'Messages', icon: MessageOutlined });
   }

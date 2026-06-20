@@ -1,4 +1,4 @@
-import type { ApiResponse } from '@sih-saas/shared';
+import type { ApiResponse, PaymentProviderType } from '@sih-saas/shared';
 import { api } from './api';
 
 export interface SettingEmail {
@@ -9,6 +9,7 @@ export interface SettingEmail {
 
 export interface SettingPaiements {
   actifs: boolean;
+  passerelleActive?: PaymentProviderType;
 }
 
 export interface Settings {

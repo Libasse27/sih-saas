@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PaymentProviderType } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
 import { SettingEntity } from '../infrastructure/entities/setting.entity';
@@ -25,7 +26,7 @@ export class SettingsService {
       this.repository.create({
         id: SETTINGS_ID,
         email: { nomExpediteur: null, emailExpediteur: null, emailSupport: null },
-        paiements: { actifs: true },
+        paiements: { actifs: true, passerelleActive: PaymentProviderType.SANDBOX },
       }),
     );
   }
