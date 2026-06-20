@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { randomUUID } from 'node:crypto';
+import { LoggerModule } from 'nestjs-pino';
 import configuration from './config/configuration';
 import { validateEnv } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
@@ -39,6 +41,25 @@ import { SharedModule } from './shared/shared.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration], validate: validateEnv }),
+    // Logs structurés JSON (Phase 22, voir docs/plan-de-reprise.md) — remplace le logger console par
+    // défaut de Nest pour tout `new Logger(...)` existant (aucun changement requis dans les ~7
+    // services qui l'utilisent déjà) + journalise automatiquement chaque requête HTTP (méthode, URL,
+    // code, durée, identifiant de corrélation). Ne journalise jamais le corps des requêtes/réponses
+    // (DME, prescriptions...) — seulement les en-têtes (avec redaction) et métadonnées.
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+        transport:
+          process.env.NODE_ENV === 'production'
+            ? undefined
+            : { target: 'pino-pretty', options: { singleLine: true, translateTime: 'HH:MM:ss' } },
+        redact: {
+          paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+          remove: true,
+        },
+        genReqId: (req) => (req.headers['x-request-id'] as string | undefined) ?? randomUUID(),
+      },
+    }),
     ScheduleModule.forRoot(),
     DatabaseModule,
     SharedModule,

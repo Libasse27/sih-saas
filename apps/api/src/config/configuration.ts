@@ -23,6 +23,8 @@ export default () => ({
   redis: {
     host: process.env.REDIS_HOST ?? 'localhost',
     port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
+    // Absent en dev (conteneur sans --requirepass) — requis en prod (voir docker-compose.prod.yml).
+    password: process.env.REDIS_PASSWORD,
   },
 
   jwt: {

@@ -3,12 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   // rawBody: true — nécessaire pour vérifier la signature HMAC des webhooks de paiement
   // sur le corps brut exact (voir PaymentsController.webhook / SandboxPaymentGateway).
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  // bufferLogs: true — les logs émis avant app.useLogger() ci-dessous (ex. pendant le chargement
+  // des modules) sont mis en attente puis rejoués via pino, au lieu d'être perdus.
+  const app = await NestFactory.create(AppModule, { rawBody: true, bufferLogs: true });
+  app.useLogger(app.get(Logger));
   const config = app.get(ConfigService);
 
   app.use(helmet());
