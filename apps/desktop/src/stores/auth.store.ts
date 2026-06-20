@@ -59,8 +59,8 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /** Lève une erreur explicite si le compte est de scope PATIENT — réservé à l'app mobile (prompt maître §14). */
-    async login(email: string, motDePasse: string): Promise<void> {
-      const data = await authService.login(email, motDePasse);
+    async login(email: string, motDePasse: string, mfaCode?: string): Promise<void> {
+      const data = await authService.login(email, motDePasse, mfaCode);
 
       if (data.user.scope === Scope.PATIENT) {
         throw new Error("Ce compte patient n'est pas autorisé sur la console desktop — utilisez l'application mobile.");

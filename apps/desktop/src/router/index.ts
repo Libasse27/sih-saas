@@ -57,6 +57,36 @@ const router = createRouter({
           name: 'etablissement-dashboard',
           component: () => import('../views/etablissement/DashboardView.vue'),
         },
+        {
+          path: 'maintenance',
+          name: 'etablissement-maintenance',
+          component: () => import('../views/etablissement/MaintenanceListView.vue'),
+        },
+        {
+          path: 'sterilisation',
+          name: 'etablissement-sterilisation',
+          component: () => import('../views/etablissement/SterilisationListView.vue'),
+        },
+        {
+          path: 'logistique',
+          name: 'etablissement-logistique',
+          component: () => import('../views/etablissement/LogistiqueListView.vue'),
+        },
+        {
+          path: 'social',
+          name: 'etablissement-social',
+          component: () => import('../views/etablissement/SocialView.vue'),
+        },
+        {
+          path: 'api-keys',
+          name: 'etablissement-api-keys',
+          component: () => import('../views/etablissement/ApiKeysListView.vue'),
+        },
+        {
+          path: 'securite',
+          name: 'etablissement-securite',
+          component: () => import('../views/etablissement/SecuriteView.vue'),
+        },
       ],
     },
     { path: '/', redirect: { name: 'login' } },

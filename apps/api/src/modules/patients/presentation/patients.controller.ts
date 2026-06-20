@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
@@ -42,6 +42,27 @@ export class PatientsController {
       throw new NotFoundException('Aucun dossier patient associé à ce compte.');
     }
     return patient;
+  }
+
+  /**
+   * Déclarée avant `:id` (même précaution que `/praticiens` côté UsersController) — pas de
+   * collision possible ici de toute façon (profondeur de chemin différente), mais garde la
+   * convention. Pas de `@RequirePermissions` : OR (PATIENT_READ | SOCIAL_MANAGE) impossible à
+   * exprimer avec ce décorateur (ET logique, voir permissions.guard.ts) — un assistant social n'a
+   * que `social:manage`, jamais `patient:read` (matrice-rbac.md), mais doit pouvoir résoudre l'IDH
+   * qu'on lui communique avant de créer une note sociale (Phase 12, écran desktop Social).
+   */
+  @Get('recherche/:idh')
+  @Scopes(Scope.ETABLISSEMENT)
+  @ResponseMessage('Patient trouvé.')
+  findByIdh(@Param('idh') idh: string, @CurrentUser() currentUser: JwtPayload) {
+    if (
+      !currentUser.permissions.includes(Permission.PATIENT_READ) &&
+      !currentUser.permissions.includes(Permission.SOCIAL_MANAGE)
+    ) {
+      throw new ForbiddenException('Accès refusé : permission manquante pour cette action.');
+    }
+    return this.patientsService.findByIdh(idh);
   }
 
   @Get(':id')
