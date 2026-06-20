@@ -104,6 +104,11 @@ const router = createRouter({
           component: () => import('../views/etablissement/PharmacieView.vue'),
         },
         {
+          path: 'prescriptions',
+          name: 'etablissement-prescriptions',
+          component: () => import('../views/etablissement/PrescriptionsFileView.vue'),
+        },
+        {
           path: 'laboratoire',
           name: 'etablissement-laboratoire',
           component: () => import('../views/etablissement/LaboratoireFileView.vue'),

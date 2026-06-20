@@ -23,6 +23,7 @@ const pagination = reactive({ page: 1, limit: 20, total: 0 });
 
 const idhRecherche = ref('');
 const rechercheEnCours = ref(false);
+const nomRecherche = ref('');
 
 const modalOuvert = ref(false);
 const enregistrement = ref(false);
@@ -38,7 +39,7 @@ const formulaire = reactive({
 async function charger(): Promise<void> {
   chargement.value = true;
   try {
-    const resultat = await patientsService.findAll(pagination.page, pagination.limit);
+    const resultat = await patientsService.findAll(pagination.page, pagination.limit, nomRecherche.value.trim() || undefined);
     items.value = resultat.items;
     pagination.total = resultat.total;
   } finally {
@@ -48,6 +49,11 @@ async function charger(): Promise<void> {
 
 function changerPage(page: number): void {
   pagination.page = page;
+  void charger();
+}
+
+function onRechercheNom(): void {
+  pagination.page = 1;
   void charger();
 }
 
@@ -105,6 +111,13 @@ onMounted(charger);
     <div class="entete">
       <h2>Patients</h2>
       <a-space>
+        <a-input-search
+          v-model:value="nomRecherche"
+          placeholder="Rechercher par nom ou prénom"
+          allow-clear
+          style="width: 260px"
+          @search="onRechercheNom"
+        />
         <a-input-search
           v-model:value="idhRecherche"
           placeholder="Aller directement à un IDH"

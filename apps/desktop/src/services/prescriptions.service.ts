@@ -43,6 +43,12 @@ export async function findAll(patientId: string, page: number, limit: number): P
   return response.data.data;
 }
 
+/** File de travail transversale du pharmacien (Phase 18) — toute l'établissement, pas un patient. */
+export async function findFileDeTravail(page: number, limit: number, statut?: PrescriptionStatut): Promise<Paginated<Prescription>> {
+  const response = await api.get<ApiResponse<Paginated<Prescription>>>('/prescriptions', { params: { page, limit, statut } });
+  return response.data.data;
+}
+
 export async function findOne(patientId: string, id: string): Promise<PrescriptionAvecLignes> {
   const response = await api.get<ApiResponse<PrescriptionAvecLignes>>(`/patients/${patientId}/prescriptions/${id}`);
   return response.data.data;

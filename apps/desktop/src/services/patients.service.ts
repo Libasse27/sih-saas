@@ -33,8 +33,8 @@ export interface CreatePatientDto {
   contactUrgence?: ContactUrgence;
 }
 
-export async function findAll(page: number, limit: number): Promise<Paginated<Patient>> {
-  const response = await api.get<ApiResponse<Paginated<Patient>>>('/patients', { params: { page, limit } });
+export async function findAll(page: number, limit: number, recherche?: string): Promise<Paginated<Patient>> {
+  const response = await api.get<ApiResponse<Paginated<Patient>>>('/patients', { params: { page, limit, recherche } });
   return response.data.data;
 }
 

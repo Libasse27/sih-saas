@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role, Scope } from '@sih-saas/shared';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
@@ -67,8 +67,14 @@ export class PatientsService {
     return patient;
   }
 
-  async findAll(page: number, limit: number): Promise<PaginatedResult<PatientEntity>> {
+  /** `recherche` filtre sur nom OU prénom (ILIKE, insensible à la casse/accents partiels) — IDH exact reste `findByIdh`. */
+  async findAll(page: number, limit: number, recherche?: string): Promise<PaginatedResult<PatientEntity>> {
+    const where = recherche
+      ? [{ nom: ILike(`%${recherche}%`) }, { prenom: ILike(`%${recherche}%`) }]
+      : undefined;
+
     const [items, total] = await this.repository.findAndCount({
+      where,
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },

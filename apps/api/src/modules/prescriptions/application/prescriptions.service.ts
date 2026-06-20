@@ -88,6 +88,25 @@ export class PrescriptionsService {
     return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
 
+  /**
+   * File de travail transversale (pharmacien, Phase 18) — toute l'établissement, pas un seul
+   * patient. Même convention que LaboratoireFileController/DispensationsController : la
+   * prescription VALIDEE est déjà la chaîne d'autorisation, pas de CareContextGuard sur le contrôleur.
+   */
+  async findAll(
+    page: number,
+    limit: number,
+    filtres: { statut?: PrescriptionStatut } = {},
+  ): Promise<PaginatedResult<PrescriptionEntity>> {
+    const [items, total] = await this.repository.findAndCount({
+      where: filtres,
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { date: 'DESC' },
+    });
+    return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
+  }
+
   async valider(id: string, actingUserId: string): Promise<PrescriptionEntity> {
     const prescription = await this.findById(id);
     if (prescription.statut !== PrescriptionStatut.EN_ATTENTE) {

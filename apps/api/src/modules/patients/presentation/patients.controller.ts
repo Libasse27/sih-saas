@@ -1,6 +1,7 @@
 import { Body, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { IsOptional, IsString } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
@@ -10,6 +11,13 @@ import { PatientsService } from '../application/patients.service';
 import { CreatePatientAccesDto } from './dto/create-patient-acces.dto';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+
+class FindPatientsQueryDto extends PaginationQueryDto {
+  /** Filtre sur nom OU prénom — recherche par IDH exact reste GET /patients/recherche/:idh. */
+  @IsOptional()
+  @IsString()
+  recherche?: string;
+}
 
 @ApiTags('Patients')
 @ApiBearerAuth()
@@ -29,8 +37,8 @@ export class PatientsController {
   @Scopes(Scope.ETABLISSEMENT)
   @RequirePermissions(Permission.PATIENT_READ)
   @ResponseMessage('Liste des patients de l’établissement.')
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.patientsService.findAll(query.page, query.limit);
+  findAll(@Query() query: FindPatientsQueryDto) {
+    return this.patientsService.findAll(query.page, query.limit, query.recherche);
   }
 
   @Get('me')

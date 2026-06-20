@@ -63,6 +63,9 @@ const menuItems = computed(() => {
   if (auth.aPermission(Permission.STOCK_VIEW) || auth.aPermission(Permission.STOCK_MANAGE) || auth.aPermission(Permission.DISPENSATION_CREATE)) {
     items.push({ key: 'etablissement-pharmacie', label: 'Pharmacie', icon: ExperimentOutlined });
   }
+  if (auth.aPermission(Permission.DISPENSATION_CREATE)) {
+    items.push({ key: 'etablissement-prescriptions', label: 'Prescriptions (file)', icon: MedicineBoxOutlined });
+  }
   if (auth.aPermission(Permission.LABO_RESULT_WRITE) || auth.aPermission(Permission.LABO_RESULT_VALIDATE)) {
     items.push({ key: 'etablissement-laboratoire', label: 'Laboratoire', icon: ExperimentOutlined });
   }

@@ -8,6 +8,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { PrescriptionsService } from './application/prescriptions.service';
 import { PrescriptionLigneEntity } from './infrastructure/entities/prescription-ligne.entity';
 import { PrescriptionEntity } from './infrastructure/entities/prescription.entity';
+import { PrescriptionsFileController } from './presentation/prescriptions-file.controller';
 import { PrescriptionsController } from './presentation/prescriptions.controller';
 
 @Module({
@@ -20,7 +21,7 @@ import { PrescriptionsController } from './presentation/prescriptions.controller
     AdmissionsLitsModule,
     RendezVousModule,
   ],
-  controllers: [PrescriptionsController],
+  controllers: [PrescriptionsController, PrescriptionsFileController],
   providers: [PrescriptionsService],
   exports: [PrescriptionsService],
 })

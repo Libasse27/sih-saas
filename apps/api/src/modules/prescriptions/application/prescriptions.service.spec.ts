@@ -72,4 +72,20 @@ describe('PrescriptionsService', () => {
     const saved = await service.marquerDispensee('p1');
     expect(saved.statut).toBe(PrescriptionStatut.DISPENSEE);
   });
+
+  describe('findAll (file de travail transversale, Phase 18)', () => {
+    it('liste toutes les prescriptions de l’établissement sans filtre patient', async () => {
+      await service.findAll(1, 20);
+      expect(repository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+
+    it('filtre par statut quand fourni', async () => {
+      await service.findAll(1, 20, { statut: PrescriptionStatut.VALIDEE });
+      expect(repository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { statut: PrescriptionStatut.VALIDEE } }),
+      );
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import { Role, Scope, Sexe } from '@sih-saas/shared';
+import { ILike } from 'typeorm';
 import { PatientEntity } from '../infrastructure/entities/patient.entity';
 import { PatientsService } from './patients.service';
 
@@ -54,6 +55,26 @@ describe('PatientsService', () => {
 
       expect(auditService.log).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'patient.create', etablissementId: 'etab-1', userId: 'user-1' }),
+      );
+    });
+  });
+
+  describe('findAll', () => {
+    beforeEach(() => {
+      repository.findAndCount.mockResolvedValue([[], 0]);
+    });
+
+    it('sans recherche : aucun filtre where', async () => {
+      await service.findAll(1, 20);
+      expect(repository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: undefined }),
+      );
+    });
+
+    it('avec recherche : filtre OR sur nom et prénom (ILIKE)', async () => {
+      await service.findAll(1, 20, 'Diallo');
+      expect(repository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: [{ nom: ILike('%Diallo%') }, { prenom: ILike('%Diallo%') }] }),
       );
     });
   });
