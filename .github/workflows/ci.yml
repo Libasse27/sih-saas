@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  PNPM_VERSION: "10"
+  NODE_VERSION: "20"
+
+jobs:
+  build-test:
+    # Pas d'étape de lint : `eslint` est référencé dans apps/api/package.json mais n'a jamais été
+    # installé ni configuré dans ce dépôt (aucune dépendance ni fichier de config eslint) — à poser
+    # séparément plutôt que de faire échouer ce workflow dès le premier run.
+    name: Build, tests unitaires
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build packages/shared
+        run: pnpm --filter @sih-saas/shared build
+
+      - name: Build API
+        run: pnpm --filter @sih-saas/api build
+
+      - name: Tests unitaires API
+        run: pnpm --filter @sih-saas/api test
+
+      - name: Typecheck desktop (console plateforme + établissement)
+        run: pnpm --filter @sih-saas/desktop typecheck
+
+      - name: Typecheck mobile (patient)
+        run: pnpm --filter @sih-saas/mobile typecheck
+
+  integration-tests:
+    name: Tests d'intégration (isolation RLS, Postgres + MongoDB réels)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Mêmes conteneurs qu'en local (Postgres+MongoDB+Redis, rôle applicatif sih_saas_app via
+      # infrastructure/docker/postgres-init/01-create-app-role.sql) — --wait attend les healthchecks.
+      - name: Démarrer les conteneurs de dev
+        run: docker compose -f docker-compose.dev.yml up -d --wait
+
+      # apps/api/.env.example correspond exactement aux ports/identifiants de docker-compose.dev.yml.
+      - name: Configurer l'environnement
+        run: cp apps/api/.env.example apps/api/.env
+
+      - name: Build packages/shared
+        run: pnpm --filter @sih-saas/shared build
+
+      - name: Exécuter les migrations
+        run: pnpm --filter @sih-saas/api migration:run
+
+      - name: Tests d'intégration (isolation multi-tenant)
+        run: pnpm --filter @sih-saas/api test:integration
+
+      - name: Arrêter les conteneurs
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down -v

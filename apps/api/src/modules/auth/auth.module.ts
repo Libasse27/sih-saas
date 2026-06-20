@@ -8,6 +8,7 @@ import { PlansModule } from '../plans/plans.module';
 import { ProvisioningModule } from '../provisioning/provisioning.module';
 import { UsersModule } from '../users/users.module';
 import { AuthService } from './application/auth.service';
+import { MfaService } from './application/mfa.service';
 import { RegistrationService } from './application/registration.service';
 import { RefreshTokenEntity } from './infrastructure/entities/refresh-token.entity';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
@@ -25,7 +26,7 @@ import { AuthController } from './presentation/auth.controller';
     ProvisioningModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, RegistrationService, JwtStrategy],
+  providers: [AuthService, RegistrationService, JwtStrategy, MfaService],
   exports: [AuthService],
 })
 export class AuthModule {}

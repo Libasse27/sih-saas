@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MEDICAL_ROLES, Permission, Role, Scope } from '@sih-saas/shared';
@@ -7,6 +7,8 @@ import { In, Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
 import { SubscriptionsService } from '../../subscriptions/application/subscriptions.service';
+import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
+import { ServiceEntity } from '../../admissions-lits/infrastructure/entities/service.entity';
 import { resolveEffectivePermissions } from '../domain/permission-resolver';
 import { RolePermissionEntity } from '../infrastructure/entities/role-permission.entity';
 import { UserPermissionEntity } from '../infrastructure/entities/user-permission.entity';
@@ -35,14 +37,44 @@ export class UsersService {
     private readonly subscriptionsService: SubscriptionsService,
     private readonly etablissementsService: EtablissementsService,
     private readonly auditService: AuditService,
+    private readonly tenantContext: TenantContextService,
   ) {}
 
   async findByEmailForAuth(email: string): Promise<UserEntity | null> {
     return this.usersRepository
       .createQueryBuilder('user')
       .addSelect('user.passwordHash')
+      .addSelect('user.mfaSecret')
       .where('user.email = :email', { email })
       .getOne();
+  }
+
+  /** `mfaSecret` est `select:false` (UserEntity) — chargement explicite pour les endpoints MFA (Phase 11). */
+  async findByIdWithMfaSecret(id: string): Promise<UserEntity> {
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.mfaSecret')
+      .where('user.id = :id', { id })
+      .getOne();
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable.');
+    }
+    return user;
+  }
+
+  /** Secret en attente de confirmation (Phase 11) — `mfaEnabled` reste `false` jusqu'à `confirmerMfa`. */
+  async setMfaSecret(userId: string, secret: string): Promise<void> {
+    await this.usersRepository.update(userId, { mfaSecret: secret, mfaEnabled: false });
+  }
+
+  async enableMfa(userId: string): Promise<void> {
+    await this.usersRepository.update(userId, { mfaEnabled: true });
+    await this.auditService.log({ userId, action: 'auth.mfa.activer' });
+  }
+
+  async disableMfa(userId: string): Promise<void> {
+    await this.usersRepository.update(userId, { mfaEnabled: false, mfaSecret: null });
+    await this.auditService.log({ userId, action: 'auth.mfa.desactiver' });
   }
 
   async findById(id: string): Promise<UserEntity> {
@@ -104,6 +136,18 @@ export class UsersService {
    */
   async setAffectation(id: string, serviceId: string | null, actingUserId: string): Promise<UserEntity> {
     const user = await this.findById(id);
+
+    if (serviceId) {
+      // RLS scope la recherche à l'établissement courant (TenantGuard) : un service d'un autre
+      // établissement est introuvable ici, sans avoir besoin de comparer explicitement les ids.
+      const service = await this.tenantContext.getManager().getRepository(ServiceEntity).findOne({
+        where: { id: serviceId },
+      });
+      if (!service) {
+        throw new BadRequestException('Service introuvable dans cet établissement.');
+      }
+    }
+
     user.serviceId = serviceId;
     const saved = await this.usersRepository.save(user);
 

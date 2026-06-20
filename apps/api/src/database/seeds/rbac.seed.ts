@@ -19,6 +19,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.ABONNEMENT_ETABLISSEMENT_VIEW,
     Permission.ABONNEMENT_ETABLISSEMENT_RENEW,
     Permission.AUDIT_READ_LOCAL,
+    Permission.API_KEY_MANAGE,
   ],
   [Role.DIRECTEUR]: [
     Permission.UTILISATEUR_MANAGE,
@@ -26,6 +27,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.ABONNEMENT_ETABLISSEMENT_VIEW,
     Permission.ABONNEMENT_ETABLISSEMENT_RENEW,
     Permission.AUDIT_READ_LOCAL,
+    Permission.API_KEY_MANAGE,
   ],
   [Role.ADMIN_SYSTEME]: [Permission.UTILISATEUR_MANAGE, Permission.ETABLISSEMENT_SETTINGS],
   [Role.MEDECIN]: [

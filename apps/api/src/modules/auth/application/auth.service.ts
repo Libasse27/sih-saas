@@ -10,6 +10,7 @@ import { AuditService } from '../../audit/application/audit.service';
 import { UsersService } from '../../users/application/users.service';
 import { UserEntity } from '../../users/infrastructure/entities/user.entity';
 import { RefreshTokenEntity } from '../infrastructure/entities/refresh-token.entity';
+import { MfaService } from './mfa.service';
 
 export interface AuthTokens {
   accessToken: string;
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly auditService: AuditService,
+    private readonly mfaService: MfaService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokensRepository: Repository<RefreshTokenEntity>,
   ) {}
@@ -36,6 +38,7 @@ export class AuthService {
     email: string,
     password: string,
     context: LoginContext = {},
+    mfaCode?: string,
   ): Promise<{ tokens: AuthTokens; user: UserEntity }> {
     const user = await this.usersService.findByEmailForAuth(email);
 
@@ -71,6 +74,23 @@ export class AuthService {
         userAgent: context.userAgent,
       });
       throw new UnauthorizedException('Identifiants invalides.');
+    }
+
+    if (user.mfaEnabled) {
+      if (!mfaCode) {
+        throw new ForbiddenException('Code MFA requis.');
+      }
+      if (!this.mfaService.verifierCode(user, mfaCode)) {
+        await this.usersService.recordFailedLogin(user);
+        await this.auditService.log({
+          etablissementId: user.etablissementId,
+          userId: user.id,
+          action: 'auth.mfa.code_invalide',
+          ip: context.ip,
+          userAgent: context.userAgent,
+        });
+        throw new UnauthorizedException('Code MFA invalide.');
+      }
     }
 
     await this.usersService.recordSuccessfulLogin(user);

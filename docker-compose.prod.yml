@@ -1,0 +1,96 @@
+# Déploiement production (Phase 11). Diffère volontairement de docker-compose.dev.yml :
+# - aucun port DB exposé sur l'hôte (Postgres/Mongo/Redis joignables uniquement depuis le réseau
+#   docker interne `sih_saas_net`, jamais depuis l'extérieur — prompt maître §17/§19).
+# - secrets via env_file (apps/api/.env.production, jamais commité, voir .env.production.example).
+# - volumes nommés persistants + healthchecks + redémarrage automatique.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sih-saas-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_BOOTSTRAP_USER:-sih_saas}
+      POSTGRES_PASSWORD: ${POSTGRES_BOOTSTRAP_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-sih_saas}
+      # Lu par infrastructure/docker/postgres-init-prod/01-create-app-role.sh — jamais codé en dur
+      # en production (contrairement à postgres-init/01-create-app-role.sql, utilisé en dev).
+      SIH_SAAS_APP_PASSWORD: ${SIH_SAAS_APP_PASSWORD}
+    volumes:
+      - sih_saas_postgres_prod_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres-init-prod:/docker-entrypoint-initdb.d:ro
+    networks:
+      - sih_saas_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_BOOTSTRAP_USER:-sih_saas} -d ${POSTGRES_DB:-sih_saas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongodb:
+    image: mongo:7
+    container_name: sih-saas-mongodb-prod
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-sih_saas}
+    volumes:
+      - sih_saas_mongodb_prod_data:/data/db
+    networks:
+      - sih_saas_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: sih-saas-redis-prod
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - sih_saas_redis_prod_data:/data
+    networks:
+      - sih_saas_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: sih-saas-api:latest
+    container_name: sih-saas-api-prod
+    restart: unless-stopped
+    env_file:
+      - apps/api/.env.production
+    ports:
+      - "${API_PORT:-3000}:3000"
+    networks:
+      - sih_saas_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+networks:
+  sih_saas_net:
+    driver: bridge
+
+volumes:
+  sih_saas_postgres_prod_data:
+  sih_saas_mongodb_prod_data:
+  sih_saas_redis_prod_data:

@@ -5,6 +5,7 @@
   "description": "Plateforme SaaS Multi-Établissements de Gestion Hospitalière (SIH SaaS)",
   "license": "UNLICENSED",
   "scripts": {
+    "dev": "concurrently -n api,desktop,mobile -c blue,magenta,green \"pnpm dev:api\" \"pnpm dev:desktop\" \"pnpm dev:mobile\"",
     "dev:api": "pnpm --filter @sih-saas/api start:dev",
     "build:api": "pnpm --filter @sih-saas/api build",
     "test:api": "pnpm --filter @sih-saas/api test",
@@ -15,7 +16,12 @@
     "dev:mobile": "pnpm --filter @sih-saas/mobile start",
     "dev:mobile:web": "pnpm --filter @sih-saas/mobile web",
     "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
-    "docker:dev:down": "docker compose -f docker-compose.dev.yml down"
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:prod:up": "docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build",
+    "docker:prod:down": "docker compose --env-file .env.production -f docker-compose.prod.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   },
   "engines": {
     "node": ">=20"

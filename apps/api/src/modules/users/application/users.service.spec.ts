@@ -1,14 +1,21 @@
+import { BadRequestException } from '@nestjs/common';
 import { Role } from '@sih-saas/shared';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
-  let usersRepository: { findOne: jest.Mock; find: jest.Mock };
+  let usersRepository: { findOne: jest.Mock; find: jest.Mock; save: jest.Mock };
   let userRolesRepository: { find: jest.Mock };
+  let auditService: { log: jest.Mock };
+  let tenantContext: { getManager: jest.Mock };
+  let serviceRepository: { findOne: jest.Mock };
   let service: UsersService;
 
   beforeEach(() => {
-    usersRepository = { findOne: jest.fn(), find: jest.fn() };
+    usersRepository = { findOne: jest.fn(), find: jest.fn(), save: jest.fn((entity) => entity) };
     userRolesRepository = { find: jest.fn() };
+    auditService = { log: jest.fn() };
+    serviceRepository = { findOne: jest.fn() };
+    tenantContext = { getManager: jest.fn(() => ({ getRepository: () => serviceRepository })) };
 
     service = new UsersService(
       usersRepository as any,
@@ -18,7 +25,8 @@ describe('UsersService', () => {
       {} as any,
       {} as any,
       {} as any,
-      {} as any,
+      auditService as any,
+      tenantContext as any,
     );
   });
 
@@ -51,6 +59,37 @@ describe('UsersService', () => {
 
       expect(praticiens).toEqual([]);
       expect(usersRepository.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('setAffectation', () => {
+    it('refuse un serviceId introuvable dans l’établissement courant (RLS)', async () => {
+      usersRepository.findOne.mockResolvedValue({ id: 'user-1', etablissementId: 'etab-1', serviceId: null });
+      serviceRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.setAffectation('user-1', 'service-autre-etab', 'admin-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(usersRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('accepte un serviceId trouvé dans l’établissement courant', async () => {
+      usersRepository.findOne.mockResolvedValue({ id: 'user-1', etablissementId: 'etab-1', serviceId: null });
+      serviceRepository.findOne.mockResolvedValue({ id: 'service-1', etablissementId: 'etab-1' });
+
+      const user = await service.setAffectation('user-1', 'service-1', 'admin-1');
+
+      expect(user.serviceId).toBe('service-1');
+      expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'utilisateur.affectation.update' }));
+    });
+
+    it('accepte serviceId = null sans interroger le repository de services', async () => {
+      usersRepository.findOne.mockResolvedValue({ id: 'user-1', etablissementId: 'etab-1', serviceId: 'service-1' });
+
+      const user = await service.setAffectation('user-1', null, 'admin-1');
+
+      expect(user.serviceId).toBeNull();
+      expect(serviceRepository.findOne).not.toHaveBeenCalled();
     });
   });
 

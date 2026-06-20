@@ -90,6 +90,15 @@ export class PatientsService {
     return this.repository.findOne({ where: { userId } });
   }
 
+  /** Utilisé par GET /fhir/Patient?identifier= (Phase 11) — recherche par IDH plutôt que par id technique. */
+  async findByIdh(idh: string): Promise<PatientEntity> {
+    const patient = await this.repository.findOne({ where: { idh } });
+    if (!patient) {
+      throw new NotFoundException('Patient introuvable.');
+    }
+    return patient;
+  }
+
   async update(id: string, dto: UpdatePatientDto, actingUserId: string): Promise<PatientEntity> {
     const patient = await this.findById(id);
     Object.assign(patient, dto);

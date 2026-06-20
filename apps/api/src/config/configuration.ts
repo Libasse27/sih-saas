@@ -2,6 +2,9 @@ export default () => ({
   env: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
   apiPrefix: process.env.API_PREFIX ?? 'api',
+  // Whitelist CORS (Phase 11) : la console desktop (Vite) en dev, le(s) domaine(s) de prod en liste séparée par virgules.
+  // Pas de CORS pour le mobile (React Native n'exécute pas dans un contexte navigateur) ni pour les clés API FHIR (server-to-server).
+  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',').map((origin) => origin.trim()),
 
   postgres: {
     host: process.env.POSTGRES_HOST,

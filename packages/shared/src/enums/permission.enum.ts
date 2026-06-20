@@ -67,6 +67,10 @@ export enum Permission {
   SOCIAL_MANAGE = 'social:manage',
   MAINTENANCE_MANAGE = 'maintenance:manage',
   STERILISATION_MANAGE = 'sterilisation:manage',
+
+  // Interopérabilité / sécurité (Phase 11)
+  API_KEY_MANAGE = 'api-key:manage',
+  FHIR_READ = 'fhir:read', // accordée uniquement via une clé API, jamais un rôle humain
 }
 
 /** Effet d'un override ponctuel dans user_permissions (matrice-rbac.md §0 — table user_permissions). */

@@ -12,7 +12,7 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   app.use(helmet());
-  app.enableCors();
+  app.enableCors({ origin: config.get<string[]>('corsOrigins'), credentials: true });
   app.setGlobalPrefix(config.get<string>('apiPrefix') ?? 'api');
 
   app.useGlobalPipes(

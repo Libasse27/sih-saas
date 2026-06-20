@@ -5,12 +5,14 @@ import { AuditService } from '../../audit/application/audit.service';
 import { UsersService } from '../../users/application/users.service';
 import { UserEntity } from '../../users/infrastructure/entities/user.entity';
 import { AuthService } from './auth.service';
+import { MfaService } from './mfa.service';
 
 describe('AuthService', () => {
   let authService: AuthService;
   let usersService: jest.Mocked<Pick<UsersService, 'findByEmailForAuth' | 'isLocked' | 'recordFailedLogin' | 'recordSuccessfulLogin' | 'findById' | 'getRoles' | 'getEffectivePermissions'>>;
   let jwtService: { signAsync: jest.Mock; verifyAsync: jest.Mock; decode: jest.Mock };
   let auditService: jest.Mocked<Pick<AuditService, 'log'>>;
+  let mfaService: jest.Mocked<Pick<MfaService, 'verifierCode'>>;
   let refreshTokensRepository: { findOne: jest.Mock; update: jest.Mock; save: jest.Mock; create: jest.Mock };
 
   const buildUser = (overrides: Partial<UserEntity> = {}): UserEntity =>
@@ -59,6 +61,7 @@ describe('AuthService', () => {
     };
 
     auditService = { log: jest.fn() };
+    mfaService = { verifierCode: jest.fn() };
 
     refreshTokensRepository = {
       findOne: jest.fn(),
@@ -74,6 +77,7 @@ describe('AuthService', () => {
       jwtService as any,
       config as any,
       auditService as unknown as AuditService,
+      mfaService as unknown as MfaService,
       refreshTokensRepository as any,
     );
   });
@@ -121,6 +125,36 @@ describe('AuthService', () => {
       expect(auditService.log).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'auth.login.success' }),
       );
+    });
+
+    it('exige un code MFA quand mfaEnabled=true et aucun code fourni', async () => {
+      const user = buildUser({ passwordHash: bonMotDePasseHash, mfaEnabled: true });
+      usersService.findByEmailForAuth.mockResolvedValue(user);
+
+      await expect(authService.login(user.email, 'BonMotDePasse123')).rejects.toThrow(ForbiddenException);
+      expect(usersService.recordSuccessfulLogin).not.toHaveBeenCalled();
+    });
+
+    it('rejette un code MFA invalide (incrémente les tentatives échouées)', async () => {
+      const user = buildUser({ passwordHash: bonMotDePasseHash, mfaEnabled: true });
+      usersService.findByEmailForAuth.mockResolvedValue(user);
+      mfaService.verifierCode.mockReturnValue(false);
+
+      await expect(authService.login(user.email, 'BonMotDePasse123', {}, '000000')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(usersService.recordFailedLogin).toHaveBeenCalledWith(user);
+    });
+
+    it('connecte avec un code MFA valide', async () => {
+      const user = buildUser({ passwordHash: bonMotDePasseHash, mfaEnabled: true });
+      usersService.findByEmailForAuth.mockResolvedValue(user);
+      mfaService.verifierCode.mockReturnValue(true);
+
+      const result = await authService.login(user.email, 'BonMotDePasse123', {}, '123456');
+
+      expect(usersService.recordSuccessfulLogin).toHaveBeenCalledWith(user);
+      expect(result.tokens.accessToken).toBe('signed-token');
     });
   });
 
