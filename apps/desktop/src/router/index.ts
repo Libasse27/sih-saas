@@ -58,6 +58,52 @@ const router = createRouter({
           component: () => import('../views/etablissement/DashboardView.vue'),
         },
         {
+          path: 'patients',
+          name: 'etablissement-patients',
+          component: () => import('../views/etablissement/PatientsListView.vue'),
+        },
+        {
+          path: 'patients/:id',
+          name: 'etablissement-patient-detail',
+          component: () => import('../views/etablissement/PatientDetailView.vue'),
+          props: true,
+        },
+        {
+          path: 'rendez-vous',
+          name: 'etablissement-rendez-vous',
+          component: () => import('../views/etablissement/RendezVousListView.vue'),
+        },
+        {
+          path: 'lits',
+          name: 'etablissement-lits',
+          component: () => import('../views/etablissement/LitsView.vue'),
+        },
+        {
+          path: 'admissions',
+          name: 'etablissement-admissions',
+          component: () => import('../views/etablissement/AdmissionsListView.vue'),
+        },
+        {
+          path: 'pharmacie',
+          name: 'etablissement-pharmacie',
+          component: () => import('../views/etablissement/PharmacieView.vue'),
+        },
+        {
+          path: 'laboratoire',
+          name: 'etablissement-laboratoire',
+          component: () => import('../views/etablissement/LaboratoireFileView.vue'),
+        },
+        {
+          path: 'imagerie',
+          name: 'etablissement-imagerie',
+          component: () => import('../views/etablissement/ImagerieFileView.vue'),
+        },
+        {
+          path: 'facturation',
+          name: 'etablissement-facturation',
+          component: () => import('../views/etablissement/FacturationCaisseView.vue'),
+        },
+        {
           path: 'maintenance',
           name: 'etablissement-maintenance',
           component: () => import('../views/etablissement/MaintenanceListView.vue'),

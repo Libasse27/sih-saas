@@ -56,9 +56,14 @@ export class UsersController {
     return this.usersService.findByEtablissement(currentUser.etablissementId!, query.page, query.limit);
   }
 
-  /** Déclarée avant `:id` pour ne pas être capturée par le paramètre (même précaution que /patients/me). */
+  /**
+   * Déclarée avant `:id` pour ne pas être capturée par le paramètre (même précaution que /patients/me).
+   * Scope ETABLISSEMENT ajouté (Phase 13) : le personnel (secrétaire médicale, etc.) a besoin du même
+   * annuaire pour choisir un praticien en créant un RDV pour un patient — même permission `rdv:create`
+   * que `POST /rendez-vous`, déjà partagée entre patient et établissement côté RendezVousController.
+   */
   @Get('praticiens')
-  @Scopes(Scope.PATIENT)
+  @Scopes(Scope.PATIENT, Scope.ETABLISSEMENT)
   @RequirePermissions(Permission.RDV_CREATE)
   @ResponseMessage('Praticiens de mon établissement.')
   findPraticiens(@CurrentUser() currentUser: JwtPayload) {

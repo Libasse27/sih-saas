@@ -2,6 +2,7 @@ import type { JwtPayload, Permission } from '@sih-saas/shared';
 import { Scope } from '@sih-saas/shared';
 import { defineStore } from 'pinia';
 import * as authService from '../services/auth.service';
+import * as realtime from '../services/realtime';
 import { secureStorage } from '../services/secure-storage';
 
 const ACCESS_TOKEN_KEY = 'sih_access_token';
@@ -54,6 +55,9 @@ export const useAuthStore = defineStore('auth', {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.payload = decoderPayload(accessToken);
+        if (this.payload.scope === Scope.ETABLISSEMENT) {
+          realtime.connecter(accessToken);
+        }
       }
       this.pret = true;
     },
@@ -81,6 +85,10 @@ export const useAuthStore = defineStore('auth', {
       this.payload = decoderPayload(accessToken);
       this.nomComplet = `${prenom} ${nom}`;
       this.email = email;
+
+      if (this.payload.scope === Scope.ETABLISSEMENT) {
+        realtime.connecter(accessToken);
+      }
 
       await Promise.all([
         secureStorage.set(ACCESS_TOKEN_KEY, accessToken),
@@ -114,6 +122,7 @@ export const useAuthStore = defineStore('auth', {
         // Non bloquant : on nettoie systématiquement l'état local même si l'appel serveur échoue.
       }
 
+      realtime.deconnecter();
       this.accessToken = null;
       this.refreshToken = null;
       this.payload = null;

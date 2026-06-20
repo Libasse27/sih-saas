@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import {
+  CalendarOutlined,
   DashboardOutlined,
+  DollarOutlined,
+  ExperimentOutlined,
+  EyeOutlined,
   KeyOutlined,
+  MedicineBoxOutlined,
   SafetyOutlined,
   ShopOutlined,
   SmileOutlined,
+  TeamOutlined,
   ToolOutlined,
 } from '@ant-design/icons-vue';
 import { Permission, SubscriptionStatut } from '@sih-saas/shared';
@@ -41,6 +47,30 @@ const menuItems = computed(() => {
     { key: 'etablissement-dashboard', label: 'Tableau de bord', icon: DashboardOutlined },
   ];
 
+  if (auth.aPermission(Permission.PATIENT_READ) || auth.aPermission(Permission.PATIENT_CREATE)) {
+    items.push({ key: 'etablissement-patients', label: 'Patients', icon: TeamOutlined });
+  }
+  if (auth.aPermission(Permission.RDV_CREATE) || auth.aPermission(Permission.RDV_MANAGE)) {
+    items.push({ key: 'etablissement-rendez-vous', label: 'Rendez-vous', icon: CalendarOutlined });
+  }
+  if (auth.aPermission(Permission.LIT_VIEW)) {
+    items.push({ key: 'etablissement-lits', label: 'Lits', icon: MedicineBoxOutlined });
+  }
+  if (auth.aPermission(Permission.ADMISSION_CREATE)) {
+    items.push({ key: 'etablissement-admissions', label: 'Admissions', icon: MedicineBoxOutlined });
+  }
+  if (auth.aPermission(Permission.STOCK_VIEW) || auth.aPermission(Permission.STOCK_MANAGE) || auth.aPermission(Permission.DISPENSATION_CREATE)) {
+    items.push({ key: 'etablissement-pharmacie', label: 'Pharmacie', icon: ExperimentOutlined });
+  }
+  if (auth.aPermission(Permission.LABO_RESULT_WRITE) || auth.aPermission(Permission.LABO_RESULT_VALIDATE)) {
+    items.push({ key: 'etablissement-laboratoire', label: 'Laboratoire', icon: ExperimentOutlined });
+  }
+  if (auth.aPermission(Permission.IMAGERIE_REPORT_WRITE) || auth.aPermission(Permission.IMAGERIE_REPORT_VALIDATE)) {
+    items.push({ key: 'etablissement-imagerie', label: 'Imagerie', icon: EyeOutlined });
+  }
+  if (auth.aPermission(Permission.FACTURE_PATIENT_CREATE)) {
+    items.push({ key: 'etablissement-facturation', label: 'Facturation', icon: DollarOutlined });
+  }
   if (auth.aPermission(Permission.MAINTENANCE_MANAGE)) {
     items.push({ key: 'etablissement-maintenance', label: 'Maintenance', icon: ToolOutlined });
   }
@@ -61,7 +91,13 @@ const menuItems = computed(() => {
   return items;
 });
 
-const selectedKeys = computed<string[]>(() => [String(route.name)]);
+const selectedKeys = computed<string[]>(() => {
+  // La fiche détail d'un patient doit garder "Patients" sélectionné dans le menu.
+  if (route.name === 'etablissement-patient-detail') {
+    return ['etablissement-patients'];
+  }
+  return [String(route.name)];
+});
 
 function onMenuClick({ key }: { key: string }): void {
   void router.push({ name: key });
