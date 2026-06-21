@@ -5,10 +5,12 @@ import { AdmissionsService } from './admissions.service';
 describe('AdmissionsService', () => {
   let repository: { create: jest.Mock; save: jest.Mock; findOne: jest.Mock; findAndCount: jest.Mock };
   let mouvementsRepository: { create: jest.Mock; save: jest.Mock };
-  let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock };
+  let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock; afterCommit: jest.Mock };
   let patientsService: { findById: jest.Mock };
   let litsService: { findById: jest.Mock; assigner: jest.Mock; liberer: jest.Mock };
   let auditService: { log: jest.Mock };
+  let realtimeGateway: { emitToEtablissement: jest.Mock };
+  let pushNotificationsService: { envoyerATousLesAppareils: jest.Mock };
   let service: AdmissionsService;
 
   beforeEach(() => {
@@ -28,16 +30,28 @@ describe('AdmissionsService', () => {
           entity.name === 'MouvementPatientEntity' ? mouvementsRepository : repository,
       })),
       getEtablissementId: jest.fn().mockReturnValue('etab-1'),
+      afterCommit: jest.fn((callback: () => void) => callback()),
     };
-    patientsService = { findById: jest.fn().mockResolvedValue({ id: 'patient-1', etablissementId: 'etab-1' }) };
+    patientsService = {
+      findById: jest.fn().mockResolvedValue({ id: 'patient-1', etablissementId: 'etab-1', userId: 'user-patient-1' }),
+    };
     litsService = {
       findById: jest.fn().mockResolvedValue({ id: 'lit-1', serviceId: 'service-1', statut: 'LIBRE' }),
       assigner: jest.fn().mockResolvedValue(undefined),
       liberer: jest.fn().mockResolvedValue(undefined),
     };
     auditService = { log: jest.fn() };
+    realtimeGateway = { emitToEtablissement: jest.fn() };
+    pushNotificationsService = { envoyerATousLesAppareils: jest.fn().mockResolvedValue(undefined) };
 
-    service = new AdmissionsService(tenantContext as any, patientsService as any, litsService as any, auditService as any);
+    service = new AdmissionsService(
+      tenantContext as any,
+      patientsService as any,
+      litsService as any,
+      auditService as any,
+      realtimeGateway as any,
+      pushNotificationsService as any,
+    );
   });
 
   describe('create', () => {
@@ -58,6 +72,11 @@ describe('AdmissionsService', () => {
         expect.objectContaining({ type: 'ENTREE', litDestinationId: 'lit-1' }),
       );
       expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'admission.create' }));
+      expect(realtimeGateway.emitToEtablissement).toHaveBeenCalledWith('etab-1', 'admission:cree', expect.objectContaining({ patientId: 'patient-1' }));
+      expect(pushNotificationsService.envoyerATousLesAppareils).toHaveBeenCalledWith(
+        'user-patient-1',
+        expect.objectContaining({ data: { admissionId: 'admission-1' } }),
+      );
     });
 
     it('fonctionne sans lit (admission sans affectation immédiate)', async () => {
@@ -91,6 +110,8 @@ describe('AdmissionsService', () => {
       expect(litsService.liberer).toHaveBeenCalledWith('lit-1', 'user-1');
       expect(litsService.assigner).toHaveBeenCalledWith('lit-2', 'patient-1', 'user-1');
       expect(mouvementsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ type: 'TRANSFERT' }));
+      expect(realtimeGateway.emitToEtablissement).toHaveBeenCalledWith('etab-1', 'admission:transfert', expect.objectContaining({ patientId: 'patient-1' }));
+      expect(pushNotificationsService.envoyerATousLesAppareils).toHaveBeenCalledWith('user-patient-1', expect.anything());
     });
   });
 
@@ -111,6 +132,8 @@ describe('AdmissionsService', () => {
       expect(admission.statut).toBe(AdmissionStatut.TERMINEE);
       expect(admission.dateSortieReelle).toBeInstanceOf(Date);
       expect(mouvementsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ type: 'SORTIE' }));
+      expect(realtimeGateway.emitToEtablissement).toHaveBeenCalledWith('etab-1', 'admission:sortie', expect.objectContaining({ patientId: 'patient-1' }));
+      expect(pushNotificationsService.envoyerATousLesAppareils).toHaveBeenCalledWith('user-patient-1', expect.anything());
     });
   });
 });

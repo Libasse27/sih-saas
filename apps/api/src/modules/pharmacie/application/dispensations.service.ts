@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { PushNotificationsService } from '../../notifications/application/push-notifications.service';
+import { RealtimeGateway } from '../../notifications/presentation/realtime.gateway';
+import { PatientsService } from '../../patients/application/patients.service';
 import { PrescriptionsService } from '../../prescriptions/application/prescriptions.service';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
 import { DispensationEntity, LigneDispensee } from '../infrastructure/entities/dispensation.entity';
@@ -11,7 +14,8 @@ import { StockMedicamentService } from './stock-medicament.service';
  * Circuit du médicament (prompt maître §12) : vérifie que la prescription est `VALIDEE`, décrémente
  * le stock ligne par ligne de façon atomique (`StockMedicamentService.decrementer`), puis passe la
  * prescription à `DISPENSEE`. Simplification MVP : une seule dispensation par prescription (pas de
- * dispensation partielle en plusieurs passages).
+ * dispensation partielle en plusieurs passages). Notifie le patient (push, générique — jamais de
+ * nom de médicament dans le corps, gap identifié à l'audit du 2026-06-21).
  */
 @Injectable()
 export class DispensationsService {
@@ -20,6 +24,9 @@ export class DispensationsService {
     private readonly prescriptionsService: PrescriptionsService,
     private readonly stockMedicamentService: StockMedicamentService,
     private readonly auditService: AuditService,
+    private readonly patientsService: PatientsService,
+    private readonly realtimeGateway: RealtimeGateway,
+    private readonly pushNotificationsService: PushNotificationsService,
   ) {}
 
   private get repository(): Repository<DispensationEntity> {
@@ -62,6 +69,21 @@ export class DispensationsService {
       ressource: 'dispensation',
       ressourceId: dispensation.id,
       metadata: { prescriptionId: dto.prescriptionId, nombreLignes: lignesDispensees.length },
+    });
+
+    const patient = await this.patientsService.findById(prescription.patientId);
+    this.tenantContext.afterCommit(() => {
+      this.realtimeGateway.emitToEtablissement(etablissementId, 'pharmacie:prescription.dispensee', {
+        prescriptionId: prescription.id,
+        patientId: prescription.patientId,
+      });
+      if (patient.userId) {
+        void this.pushNotificationsService.envoyerATousLesAppareils(patient.userId, {
+          titre: 'Médicaments dispensés',
+          corps: 'Vos médicaments ont été dispensés par la pharmacie.',
+          data: { prescriptionId: prescription.id },
+        });
+      }
     });
 
     return dispensation;

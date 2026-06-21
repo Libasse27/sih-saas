@@ -2,6 +2,7 @@ import type { ApiResponse } from '@sih-saas/shared';
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { sessionStore } from '../auth/session-store';
 import { showError } from '../components/toast';
+import { API_BASE_URL } from './base-url';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -9,9 +10,7 @@ declare module 'axios' {
   }
 }
 
-export const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api',
-});
+export const api = axios.create({ baseURL: API_BASE_URL });
 
 api.interceptors.request.use((config) => {
   const { accessToken } = sessionStore.getState();

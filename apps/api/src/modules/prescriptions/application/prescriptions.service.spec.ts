@@ -5,8 +5,11 @@ import { PrescriptionsService } from './prescriptions.service';
 describe('PrescriptionsService', () => {
   let repository: { create: jest.Mock; save: jest.Mock; findOne: jest.Mock; findAndCount: jest.Mock };
   let lignesRepository: { create: jest.Mock; save: jest.Mock; find: jest.Mock };
-  let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock };
+  let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock; afterCommit: jest.Mock };
   let auditService: { log: jest.Mock };
+  let patientsService: { findById: jest.Mock };
+  let realtimeGateway: { emitToEtablissement: jest.Mock };
+  let pushNotificationsService: { envoyerATousLesAppareils: jest.Mock };
   let service: PrescriptionsService;
 
   beforeEach(() => {
@@ -27,10 +30,20 @@ describe('PrescriptionsService', () => {
           entity.name === 'PrescriptionLigneEntity' ? lignesRepository : repository,
       })),
       getEtablissementId: jest.fn().mockReturnValue('etab-1'),
+      afterCommit: jest.fn((callback: () => void) => callback()),
     };
     auditService = { log: jest.fn() };
+    patientsService = { findById: jest.fn().mockResolvedValue({ id: 'patient-1', userId: 'user-patient-1' }) };
+    realtimeGateway = { emitToEtablissement: jest.fn() };
+    pushNotificationsService = { envoyerATousLesAppareils: jest.fn().mockResolvedValue(undefined) };
 
-    service = new PrescriptionsService(tenantContext as any, auditService as any);
+    service = new PrescriptionsService(
+      tenantContext as any,
+      auditService as any,
+      patientsService as any,
+      realtimeGateway as any,
+      pushNotificationsService as any,
+    );
   });
 
   const dto = {
@@ -51,15 +64,38 @@ describe('PrescriptionsService', () => {
     await expect(service.valider('p1', 'medecin-1')).rejects.toThrow(ConflictException);
   });
 
-  it('valider() passe EN_ATTENTE -> VALIDEE', async () => {
-    repository.findOne.mockResolvedValue({ id: 'p1', etablissementId: 'etab-1', statut: PrescriptionStatut.EN_ATTENTE });
+  it('valider() passe EN_ATTENTE -> VALIDEE, notifie la pharmacie (tenant) et le patient', async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'p1',
+      etablissementId: 'etab-1',
+      patientId: 'patient-1',
+      statut: PrescriptionStatut.EN_ATTENTE,
+    });
     const saved = await service.valider('p1', 'medecin-1');
     expect(saved.statut).toBe(PrescriptionStatut.VALIDEE);
+    expect(realtimeGateway.emitToEtablissement).toHaveBeenCalledWith(
+      'etab-1',
+      'pharmacie:prescription.validee',
+      expect.objectContaining({ prescriptionId: 'p1' }),
+    );
+    expect(pushNotificationsService.envoyerATousLesAppareils).toHaveBeenCalledWith('user-patient-1', expect.anything());
   });
 
   it('annuler() refuse si déjà DISPENSEE', async () => {
     repository.findOne.mockResolvedValue({ id: 'p1', statut: PrescriptionStatut.DISPENSEE });
     await expect(service.annuler('p1', 'medecin-1')).rejects.toThrow(ConflictException);
+  });
+
+  it('annuler() notifie le patient', async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'p1',
+      etablissementId: 'etab-1',
+      patientId: 'patient-1',
+      statut: PrescriptionStatut.EN_ATTENTE,
+    });
+    await service.annuler('p1', 'medecin-1');
+    expect(realtimeGateway.emitToEtablissement).toHaveBeenCalledWith('etab-1', 'pharmacie:prescription.annulee', expect.anything());
+    expect(pushNotificationsService.envoyerATousLesAppareils).toHaveBeenCalledWith('user-patient-1', expect.anything());
   });
 
   it('marquerDispensee() exige le statut VALIDEE', async () => {

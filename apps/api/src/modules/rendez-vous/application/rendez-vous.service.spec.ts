@@ -4,9 +4,12 @@ import { RendezVousService } from './rendez-vous.service';
 
 describe('RendezVousService', () => {
   let repository: { create: jest.Mock; save: jest.Mock; findOne: jest.Mock; findAndCount: jest.Mock; count: jest.Mock };
-  let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock };
+  let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock; afterCommit: jest.Mock };
   let auditService: { log: jest.Mock };
   let usersService: { estPraticienValide: jest.Mock };
+  let patientsService: { findById: jest.Mock };
+  let realtimeGateway: { emitToUser: jest.Mock };
+  let pushNotificationsService: { envoyerATousLesAppareils: jest.Mock };
   let service: RendezVousService;
 
   beforeEach(() => {
@@ -20,14 +23,25 @@ describe('RendezVousService', () => {
     tenantContext = {
       getManager: jest.fn(() => ({ getRepository: () => repository })),
       getEtablissementId: jest.fn().mockReturnValue('etab-1'),
+      afterCommit: jest.fn((callback: () => void) => callback()),
     };
     auditService = { log: jest.fn() };
     usersService = { estPraticienValide: jest.fn().mockResolvedValue(true) };
+    patientsService = { findById: jest.fn().mockResolvedValue({ id: 'patient-1', userId: 'user-patient-1' }) };
+    realtimeGateway = { emitToUser: jest.fn() };
+    pushNotificationsService = { envoyerATousLesAppareils: jest.fn().mockResolvedValue(undefined) };
 
-    service = new RendezVousService(tenantContext as any, auditService as any, usersService as any);
+    service = new RendezVousService(
+      tenantContext as any,
+      auditService as any,
+      usersService as any,
+      patientsService as any,
+      realtimeGateway as any,
+      pushNotificationsService as any,
+    );
   });
 
-  it('create() fixe le statut PLANIFIE et journalise', async () => {
+  it('create() fixe le statut PLANIFIE, journalise et notifie le praticien + le patient', async () => {
     const rdv = await service.create(
       { patientId: 'patient-1', praticienId: 'medecin-1', dateHeure: '2026-06-22T09:30:00.000Z' },
       'medecin-1',
@@ -36,6 +50,8 @@ describe('RendezVousService', () => {
     expect(rdv.statut).toBe(RendezVousStatut.PLANIFIE);
     expect(rdv.etablissementId).toBe('etab-1');
     expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'rdv.create' }));
+    expect(realtimeGateway.emitToUser).toHaveBeenCalledWith('medecin-1', 'rdv:nouveau', expect.objectContaining({ rendezVousId: 'rdv-1' }));
+    expect(pushNotificationsService.envoyerATousLesAppareils).toHaveBeenCalledWith('user-patient-1', expect.anything());
   });
 
   it('createForPatient() utilise le patientId fourni par le contrôleur, jamais celui du body', async () => {
@@ -69,12 +85,36 @@ describe('RendezVousService', () => {
     expect(repository.count).toHaveBeenCalledWith({ where: { praticienId: 'medecin-1', patientId: 'patient-1' } });
   });
 
-  it('changerStatut() met à jour le statut et journalise', async () => {
-    repository.findOne.mockResolvedValue({ id: 'rdv-1', etablissementId: 'etab-1', statut: RendezVousStatut.PLANIFIE });
+  it('changerStatut() met à jour le statut, journalise et notifie le patient si CONFIRME', async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'rdv-1',
+      etablissementId: 'etab-1',
+      patientId: 'patient-1',
+      praticienId: 'medecin-1',
+      statut: RendezVousStatut.PLANIFIE,
+    });
 
     const rdv = await service.changerStatut('rdv-1', RendezVousStatut.CONFIRME, 'user-1');
 
     expect(rdv.statut).toBe(RendezVousStatut.CONFIRME);
     expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'rdv.statut.update' }));
+    expect(realtimeGateway.emitToUser).toHaveBeenCalledWith('medecin-1', 'rdv:statut.maj', { rendezVousId: 'rdv-1', statut: RendezVousStatut.CONFIRME });
+    expect(pushNotificationsService.envoyerATousLesAppareils).toHaveBeenCalledWith('user-patient-1', expect.anything());
+  });
+
+  it("changerStatut() ne notifie pas le patient pour un statut TERMINE (rien d'actionnable)", async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'rdv-1',
+      etablissementId: 'etab-1',
+      patientId: 'patient-1',
+      praticienId: 'medecin-1',
+      statut: RendezVousStatut.CONFIRME,
+    });
+
+    await service.changerStatut('rdv-1', RendezVousStatut.TERMINE, 'user-1');
+
+    expect(patientsService.findById).not.toHaveBeenCalled();
+    expect(pushNotificationsService.envoyerATousLesAppareils).not.toHaveBeenCalled();
+    expect(realtimeGateway.emitToUser).toHaveBeenCalledWith('medecin-1', 'rdv:statut.maj', { rendezVousId: 'rdv-1', statut: RendezVousStatut.TERMINE });
   });
 });

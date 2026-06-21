@@ -5,10 +5,10 @@
   "description": "Application mobile patient (React Native / Expo) — Phase 10 : socle + parcours patient essentiels",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "cross-env CI=1 expo start",
+    "android": "cross-env CI=1 expo start --android",
+    "ios": "cross-env CI=1 expo start --ios",
+    "web": "cross-env CI=1 expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "build:check": "expo export"
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "babel-preset-expo": "^56.0.15",
+    "cross-env": "^7.0.3",
     "eslint": "^9.39.4",
     "eslint-config-expo": "^56.0.4",
     "playwright-core": "^1.61.0",

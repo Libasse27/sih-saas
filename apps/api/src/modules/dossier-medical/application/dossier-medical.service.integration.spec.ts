@@ -92,4 +92,15 @@ describe('DossierMedicalService (intégration MongoDB réelle)', () => {
       expect.objectContaining({ action: 'dossier.compte_rendu.create', etablissementId: etabA }),
     );
   });
+
+  it('journalise aussi une simple consultation en lecture (gap audit 2026-06-21, prompt maître §18)', async () => {
+    auditService.log.mockClear();
+
+    const dossier = await runAs(etabA, () => service.consulter(patientA, etabA, 'medecin-1'));
+
+    expect(dossier.patientId).toBe(patientA);
+    expect(auditService.log).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'dossier.consulter', etablissementId: etabA, userId: 'medecin-1', ressourceId: patientA }),
+    );
+  });
 });

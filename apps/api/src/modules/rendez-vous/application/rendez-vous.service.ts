@@ -2,6 +2,9 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CanalRdv, RendezVousStatut } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { PushNotificationsService } from '../../notifications/application/push-notifications.service';
+import { RealtimeGateway } from '../../notifications/presentation/realtime.gateway';
+import { PatientsService } from '../../patients/application/patients.service';
 import { UsersService } from '../../users/application/users.service';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
 import { RendezVousEntity } from '../infrastructure/entities/rendez-vous.entity';
@@ -22,13 +25,22 @@ export interface FindRendezVousFiltres {
   statut?: RendezVousStatut;
 }
 
-/** `clinic.rendez_vous` est protégée par RLS — voir patients.service.ts pour la convention tenantContext.getManager(). */
+/**
+ * `clinic.rendez_vous` est protégée par RLS — voir patients.service.ts pour la convention
+ * tenantContext.getManager(). Notifications (gap identifié à l'audit du 2026-06-21) : push patient
+ * (générique, jamais de motif/diagnostic dans le corps) + temps réel ciblé vers le SEUL praticien
+ * concerné (`emitToUser`, pas `emitToEtablissement` — un RDV ne concerne pas tout le tenant,
+ * même logique que MessagingService).
+ */
 @Injectable()
 export class RendezVousService {
   constructor(
     private readonly tenantContext: TenantContextService,
     private readonly auditService: AuditService,
     private readonly usersService: UsersService,
+    private readonly patientsService: PatientsService,
+    private readonly realtimeGateway: RealtimeGateway,
+    private readonly pushNotificationsService: PushNotificationsService,
   ) {}
 
   private get repository(): Repository<RendezVousEntity> {
@@ -81,6 +93,22 @@ export class RendezVousService {
       metadata: { patientId, praticienId: dto.praticienId },
     });
 
+    const patient = await this.patientsService.findById(patientId);
+    this.tenantContext.afterCommit(() => {
+      this.realtimeGateway.emitToUser(dto.praticienId, 'rdv:nouveau', {
+        rendezVousId: rdv.id,
+        patientId,
+        dateHeure: rdv.dateHeure,
+      });
+      if (patient.userId) {
+        void this.pushNotificationsService.envoyerATousLesAppareils(patient.userId, {
+          titre: 'Rendez-vous confirmé',
+          corps: 'Votre rendez-vous a bien été enregistré — ouvrez l’application pour le consulter.',
+          data: { rendezVousId: rdv.id },
+        });
+      }
+    });
+
     return rdv;
   }
 
@@ -118,6 +146,26 @@ export class RendezVousService {
       ressource: 'rendez_vous',
       ressourceId: rdv.id,
       metadata: { statut },
+    });
+
+    // Push uniquement sur les statuts qui nécessitent une action/information du patient — TERMINE
+    // et NO_SHOW se constatent après le fait, sans rien d'actionnable à lui communiquer.
+    const statutsNotifiesPatient = [RendezVousStatut.CONFIRME, RendezVousStatut.ANNULE];
+    const patient = statutsNotifiesPatient.includes(statut) ? await this.patientsService.findById(saved.patientId) : null;
+
+    this.tenantContext.afterCommit(() => {
+      this.realtimeGateway.emitToUser(saved.praticienId, 'rdv:statut.maj', { rendezVousId: saved.id, statut });
+      if (patient?.userId) {
+        const corps =
+          statut === RendezVousStatut.CONFIRME
+            ? 'Votre rendez-vous a été confirmé.'
+            : 'Votre rendez-vous a été annulé.';
+        void this.pushNotificationsService.envoyerATousLesAppareils(patient.userId, {
+          titre: 'Mise à jour de votre rendez-vous',
+          corps,
+          data: { rendezVousId: saved.id },
+        });
+      }
     });
 
     return saved;

@@ -30,7 +30,7 @@ export class DossierMedicalController {
     if (!patient) {
       throw new NotFoundException('Aucun dossier patient associé à ce compte.');
     }
-    return this.dossierMedicalService.getOrCreate(patient.id);
+    return this.dossierMedicalService.consulter(patient.id, currentUser.etablissementId!, currentUser.sub);
   }
 
   @Get(':patientId/dossier')
@@ -38,8 +38,8 @@ export class DossierMedicalController {
   @RequirePermissions(Permission.DOSSIER_READ)
   @UseGuards(CareContextGuard)
   @ResponseMessage('Dossier médical récupéré.')
-  findDossier(@Param('patientId', ParseUUIDPipe) patientId: string) {
-    return this.dossierMedicalService.getOrCreate(patientId);
+  findDossier(@Param('patientId', ParseUUIDPipe) patientId: string, @CurrentUser() currentUser: JwtPayload) {
+    return this.dossierMedicalService.consulter(patientId, currentUser.etablissementId!, currentUser.sub);
   }
 
   @Post(':patientId/dossier/observations')

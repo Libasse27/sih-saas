@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from '../audit/audit.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { PushNotificationsModule } from '../notifications/push-notifications.module';
 import { PatientsModule } from '../patients/patients.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { UsersModule } from '../users/users.module';
@@ -15,6 +17,8 @@ import { RendezVousController } from './presentation/rendez-vous.controller';
     SubscriptionsModule,
     AuditModule,
     UsersModule,
+    NotificationsModule,
+    PushNotificationsModule,
   ],
   controllers: [RendezVousController],
   providers: [RendezVousService],

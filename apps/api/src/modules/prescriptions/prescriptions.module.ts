@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdmissionsLitsModule } from '../admissions-lits/admissions-lits.module';
 import { AuditModule } from '../audit/audit.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { PushNotificationsModule } from '../notifications/push-notifications.module';
 import { PatientsModule } from '../patients/patients.module';
 import { RendezVousModule } from '../rendez-vous/rendez-vous.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
@@ -20,6 +22,8 @@ import { PrescriptionsController } from './presentation/prescriptions.controller
     PatientsModule,
     AdmissionsLitsModule,
     RendezVousModule,
+    NotificationsModule,
+    PushNotificationsModule,
   ],
   controllers: [PrescriptionsController, PrescriptionsFileController],
   providers: [PrescriptionsService],

@@ -1,5 +1,16 @@
 import type { ApiResponse, Scope } from '@sih-saas/shared';
-import { api } from './client';
+import axios from 'axios';
+import { API_BASE_URL } from './base-url';
+
+/**
+ * Instance axios dédiée, volontairement SANS les intercepteurs de `./client` (pas d'attache
+ * automatique du Bearer token, pas de retry-on-401) — ce module est justement ce que ces
+ * intercepteurs appellent en cas d'expiration (via `sessionStore`), un import de `./client` créerait
+ * un cycle (`client -> session-store -> auth.service -> client`). Évite aussi un faux positif réel :
+ * un login avec mauvais mot de passe renvoie 401, ce qui déclenchait à tort une tentative de
+ * rafraîchissement de jeton (et un toast "Session expirée") sur un simple échec de connexion.
+ */
+const api = axios.create({ baseURL: API_BASE_URL });
 
 export interface LoginResponseUser {
   id: string;

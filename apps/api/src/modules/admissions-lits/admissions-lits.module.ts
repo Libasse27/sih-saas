@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from '../audit/audit.module';
 import { EtablissementsModule } from '../etablissements/etablissements.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PushNotificationsModule } from '../notifications/push-notifications.module';
 import { PatientsModule } from '../patients/patients.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { AdmissionsService } from './application/admissions.service';
@@ -28,6 +29,7 @@ import { ServicesController } from './presentation/services.controller';
     EtablissementsModule,
     SubscriptionsModule,
     NotificationsModule,
+    PushNotificationsModule,
     AuditModule,
   ],
   controllers: [ServicesController, ChambresController, LitsController, AdmissionsController],

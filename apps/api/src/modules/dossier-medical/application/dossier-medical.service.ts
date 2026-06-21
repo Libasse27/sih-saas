@@ -30,6 +30,27 @@ export class DossierMedicalService {
     });
   }
 
+  /**
+   * Consultation explicite du dossier (gap identifié à l'audit du 2026-06-21 — prompt maître §18
+   * exige l'audit des ACCÈS en lecture, pas seulement des modifications). Volontairement distincte
+   * de `getOrCreate()`, qui reste appelée tel quel en préambule de chaque écriture ci-dessous : y
+   * ajouter ce log aurait journalisé une fausse "lecture" à chaque écriture, en plus de l'entrée
+   * d'audit dédiée déjà posée par chacune.
+   */
+  async consulter(patientId: string, etablissementId: string, actingUserId: string): Promise<DossierMedicalDocument> {
+    const dossier = await this.getOrCreate(patientId);
+
+    await this.auditService.log({
+      etablissementId,
+      userId: actingUserId,
+      action: 'dossier.consulter',
+      ressource: 'dossier_medical',
+      ressourceId: patientId,
+    });
+
+    return dossier;
+  }
+
   async ajouterObservation(
     patientId: string,
     entry: Omit<ObservationEntry, 'date'>,

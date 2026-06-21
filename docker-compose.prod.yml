@@ -69,7 +69,9 @@ services:
     env_file:
       - apps/api/.env.production
     ports:
-      - "${API_PORT:-3000}:3000"
+      # Liée à 127.0.0.1 uniquement (debug/tunnel SSH) — le trafic public passe exclusivement par
+      # nginx (80/443, TLS) ci-dessous, jamais directement sur ce port (prompt maître §17).
+      - "127.0.0.1:${API_PORT:-3000}:3000"
     networks:
       - sih_saas_net
     depends_on:
@@ -124,6 +126,42 @@ services:
       mongodb:
         condition: service_healthy
 
+  # Reverse-proxy TLS (Phase 32, gap §17 identifié à l'audit du 2026-06-21 : aucun chiffrement en
+  # transit n'existait avant). Seul point d'entrée public (80/443) — l'API n'est plus joignable
+  # depuis l'extérieur que via lui. Config rendue depuis infrastructure/docker/nginx/templates/ au
+  # démarrage (envsubst natif de l'image nginx, voir le commentaire en tête du template).
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: sih-saas-nginx-prod
+    restart: unless-stopped
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+    volumes:
+      - ./infrastructure/docker/nginx/templates:/etc/nginx/templates:ro
+      - sih_saas_certbot_conf:/etc/letsencrypt
+      - sih_saas_certbot_www:/var/www/certbot
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - sih_saas_net
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Renouvellement automatique du certificat Let's Encrypt (émission initiale = exécution manuelle
+  # unique de infrastructure/docker/nginx/init-letsencrypt.sh, voir docs/tls-production.md).
+  certbot:
+    image: certbot/certbot:latest
+    container_name: sih-saas-certbot-prod
+    restart: unless-stopped
+    volumes:
+      - sih_saas_certbot_conf:/etc/letsencrypt
+      - sih_saas_certbot_www:/var/www/certbot
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $$!; done"]
+    networks:
+      - sih_saas_net
+
 networks:
   sih_saas_net:
     driver: bridge
@@ -133,3 +171,5 @@ volumes:
   sih_saas_mongodb_prod_data:
   sih_saas_redis_prod_data:
   sih_saas_backups_data:
+  sih_saas_certbot_conf:
+  sih_saas_certbot_www:

@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { AdmissionStatut, MouvementType } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { PushNotificationsService } from '../../notifications/application/push-notifications.service';
+import { RealtimeGateway } from '../../notifications/presentation/realtime.gateway';
 import { PatientsService } from '../../patients/application/patients.service';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
 import { LitsService } from './lits.service';
@@ -11,6 +13,12 @@ import { TransfertAdmissionDto } from '../presentation/dto/transfert-admission.d
 import { AdmissionEntity } from '../infrastructure/entities/admission.entity';
 import { MouvementPatientEntity } from '../infrastructure/entities/mouvement-patient.entity';
 
+/**
+ * Notifications (prompt maître §12, gap identifié à l'audit du 2026-06-21 : seul labo/imagerie
+ * notifiait réellement) : diffusion temps réel tenant-wide (dashboard admissions/lits, déjà le
+ * pattern de LitsService) + push patient générique (jamais de diagnostic/motif dans le corps —
+ * même règle de confidentialité que MessagingService) si le patient a un compte mobile (`userId`).
+ */
 @Injectable()
 export class AdmissionsService {
   constructor(
@@ -18,6 +26,8 @@ export class AdmissionsService {
     private readonly patientsService: PatientsService,
     private readonly litsService: LitsService,
     private readonly auditService: AuditService,
+    private readonly realtimeGateway: RealtimeGateway,
+    private readonly pushNotificationsService: PushNotificationsService,
   ) {}
 
   private get repository(): Repository<AdmissionEntity> {
@@ -30,8 +40,9 @@ export class AdmissionsService {
 
   async create(dto: CreateAdmissionDto, actingUserId: string): Promise<AdmissionEntity> {
     const etablissementId = this.tenantContext.getEtablissementId()!;
-    // Valide l'existence du patient (et, via RLS, qu'il appartient bien à cet établissement).
-    await this.patientsService.findById(dto.patientId);
+    // Valide l'existence du patient (et, via RLS, qu'il appartient bien à cet établissement) —
+    // le résultat sert aussi à résoudre le destinataire de la notification push ci-dessous.
+    const patient = await this.patientsService.findById(dto.patientId);
 
     let lit = null;
     if (dto.litId) {
@@ -80,6 +91,7 @@ export class AdmissionsService {
       ressourceId: admission.id,
       metadata: { patientId: dto.patientId },
     });
+    this.notifierAdmission(etablissementId, admission, patient.userId, 'admission:cree', 'Admission enregistrée — ouvrez l’application pour plus de détails.');
 
     return admission;
   }
@@ -152,6 +164,14 @@ export class AdmissionsService {
       ressource: 'admission',
       ressourceId: admission.id,
     });
+    const patientTransfere = await this.patientsService.findById(admission.patientId);
+    this.notifierAdmission(
+      admission.etablissementId,
+      saved,
+      patientTransfere.userId,
+      'admission:transfert',
+      'Vous avez été transféré(e) de service — ouvrez l’application pour plus de détails.',
+    );
 
     return saved;
   }
@@ -190,7 +210,44 @@ export class AdmissionsService {
       ressource: 'admission',
       ressourceId: admission.id,
     });
+    const patientSorti = await this.patientsService.findById(admission.patientId);
+    this.notifierAdmission(
+      admission.etablissementId,
+      saved,
+      patientSorti.userId,
+      'admission:sortie',
+      'Votre sortie a été enregistrée — ouvrez l’application pour plus de détails.',
+    );
 
     return saved;
+  }
+
+  /**
+   * Diffusion tenant-wide (dashboard admissions/lits, même portée que `LitsService.emitMiseAJour`)
+   * + push patient générique si un compte mobile existe (`patientUserId`). Jamais bloquant : un
+   * échec d'envoi push ne doit jamais faire échouer la requête HTTP d'origine (déjà committée).
+   */
+  private notifierAdmission(
+    etablissementId: string,
+    admission: AdmissionEntity,
+    patientUserId: string | null,
+    evenement: string,
+    corpsPush: string,
+  ): void {
+    this.tenantContext.afterCommit(() => {
+      this.realtimeGateway.emitToEtablissement(etablissementId, evenement, {
+        admissionId: admission.id,
+        patientId: admission.patientId,
+        serviceId: admission.serviceId,
+        litId: admission.litId,
+      });
+      if (patientUserId) {
+        void this.pushNotificationsService.envoyerATousLesAppareils(patientUserId, {
+          titre: 'Mise à jour de votre admission',
+          corps: corpsPush,
+          data: { admissionId: admission.id },
+        });
+      }
+    });
   }
 }

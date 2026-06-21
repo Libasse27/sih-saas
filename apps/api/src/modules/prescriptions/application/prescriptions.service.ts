@@ -2,6 +2,9 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { PrescriptionStatut } from '@sih-saas/shared';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { PushNotificationsService } from '../../notifications/application/push-notifications.service';
+import { RealtimeGateway } from '../../notifications/presentation/realtime.gateway';
+import { PatientsService } from '../../patients/application/patients.service';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
 import { PrescriptionLigneEntity } from '../infrastructure/entities/prescription-ligne.entity';
 import { PrescriptionEntity } from '../infrastructure/entities/prescription.entity';
@@ -20,12 +23,21 @@ export interface PrescriptionAvecLignes {
   lignes: PrescriptionLigneEntity[];
 }
 
-/** `clinic.prescriptions`/`prescription_lignes` sont protégées par RLS — convention tenantContext.getManager(). */
+/**
+ * `clinic.prescriptions`/`prescription_lignes` sont protégées par RLS — convention
+ * tenantContext.getManager(). Notifications (gap identifié à l'audit du 2026-06-21) : la validation
+ * par le prescripteur est le signal que la pharmacie doit dispenser — diffusion tenant-wide (même
+ * portée que `stock:alerte`/`labo:resultat.disponible`, consommée par la file de travail pharmacie,
+ * Phase 18) + push patient générique (jamais de nom de médicament dans le corps).
+ */
 @Injectable()
 export class PrescriptionsService {
   constructor(
     private readonly tenantContext: TenantContextService,
     private readonly auditService: AuditService,
+    private readonly patientsService: PatientsService,
+    private readonly realtimeGateway: RealtimeGateway,
+    private readonly pushNotificationsService: PushNotificationsService,
   ) {}
 
   private get repository(): Repository<PrescriptionEntity> {
@@ -123,6 +135,7 @@ export class PrescriptionsService {
       ressource: 'prescription',
       ressourceId: prescription.id,
     });
+    await this.notifier(saved, 'pharmacie:prescription.validee', 'Votre prescription a été validée et transmise à la pharmacie.');
 
     return saved;
   }
@@ -143,6 +156,7 @@ export class PrescriptionsService {
       ressource: 'prescription',
       ressourceId: prescription.id,
     });
+    await this.notifier(saved, 'pharmacie:prescription.annulee', 'Votre prescription a été annulée.');
 
     return saved;
   }
@@ -156,5 +170,23 @@ export class PrescriptionsService {
 
     prescription.statut = PrescriptionStatut.DISPENSEE;
     return this.repository.save(prescription);
+  }
+
+  /** Fire-and-forget après commit — un échec d'envoi ne doit jamais faire échouer la requête HTTP. */
+  private async notifier(prescription: PrescriptionEntity, evenement: string, corpsPush: string): Promise<void> {
+    const patient = await this.patientsService.findById(prescription.patientId);
+    this.tenantContext.afterCommit(() => {
+      this.realtimeGateway.emitToEtablissement(prescription.etablissementId, evenement, {
+        prescriptionId: prescription.id,
+        patientId: prescription.patientId,
+      });
+      if (patient.userId) {
+        void this.pushNotificationsService.envoyerATousLesAppareils(patient.userId, {
+          titre: 'Mise à jour de votre prescription',
+          corps: corpsPush,
+          data: { prescriptionId: prescription.id },
+        });
+      }
+    });
   }
 }

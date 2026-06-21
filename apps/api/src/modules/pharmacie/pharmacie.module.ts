@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdmissionsLitsModule } from '../admissions-lits/admissions-lits.module';
 import { AuditModule } from '../audit/audit.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PushNotificationsModule } from '../notifications/push-notifications.module';
 import { PatientsModule } from '../patients/patients.module';
 import { PrescriptionsModule } from '../prescriptions/prescriptions.module';
 import { RendezVousModule } from '../rendez-vous/rendez-vous.module';
@@ -31,6 +32,7 @@ import { StockMedicamentController } from './presentation/stock-medicament.contr
     SubscriptionsModule,
     AuditModule,
     NotificationsModule,
+    PushNotificationsModule,
     PrescriptionsModule,
     // Nécessaire pour que Nest résolve les dépendances de CareContextGuard (utilisé par AdministrationController).
     PatientsModule,
