@@ -83,3 +83,63 @@ jobs:
       - name: Arrêter les conteneurs
         if: always()
         run: docker compose -f docker-compose.dev.yml down -v
+
+  e2e-tests:
+    name: Tests E2E (Cypress, console établissement)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Démarrer les conteneurs de dev
+        run: docker compose -f docker-compose.dev.yml up -d --wait
+
+      - name: Configurer l'environnement API
+        run: cp apps/api/.env.example apps/api/.env
+
+      - name: Build packages/shared
+        run: pnpm --filter @sih-saas/shared build
+
+      # Construit aussi dist/ (réutilisé par `start:prod` plus bas) — voir migration:run dans
+      # apps/api/package.json, qui chaîne `pnpm build &&` avant la commande TypeORM elle-même.
+      - name: Exécuter les migrations
+        run: pnpm --filter @sih-saas/api migration:run
+
+      # Idempotents (vérifient l'existant avant insertion) — forfaits (dont un avec le module
+      # FACTURATION, nécessaire à paiement.cy.ts), matrice RBAC, premier compte super-admin
+      # (testé par login.cy.ts).
+      - name: Données de référence (forfaits, RBAC, super-admin)
+        run: |
+          pnpm --filter @sih-saas/api seed:plans
+          pnpm --filter @sih-saas/api seed:rbac
+          pnpm --filter @sih-saas/api seed:super-admin
+
+      - name: Tests E2E (Cypress)
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: apps/desktop
+          install: false
+          start: |
+            pnpm --filter @sih-saas/api start:prod
+            pnpm --filter @sih-saas/desktop dev
+          wait-on: "http://localhost:3000/api/health, http://localhost:5173"
+          wait-on-timeout: 60
+        env:
+          # Limites de débit auth assouplies UNIQUEMENT pour cet environnement CI éphémère (Phase
+          # 26, voir auth.controller.ts) — défauts de production (3 et 5/min) inchangés ailleurs.
+          AUTH_THROTTLE_REGISTER_LIMIT: "50"
+          AUTH_THROTTLE_LOGIN_LIMIT: "50"
+
+      - name: Arrêter les conteneurs
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down -v

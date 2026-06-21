@@ -15,6 +15,15 @@ import { MfaCodeDto } from './dto/mfa-code.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 
+// Lues une seule fois au chargement du module (les arguments de `@Throttle` sont évalués à la
+// définition de la classe, pas par requête) — défauts de production inchangés (3 et 5/min) tant
+// que ces variables ne sont pas explicitement définies. Existent uniquement pour l'environnement
+// CI éphémère de la suite E2E Cypress (Phase 26) : ses specs enregistrent plusieurs établissements
+// et effectuent plusieurs connexions en quelques secondes, dépassant ces seuils volontairement
+// stricts sans pour autant représenter un trafic réel à protéger dans cet environnement jetable.
+const AUTH_REGISTER_THROTTLE_LIMIT = parseInt(process.env.AUTH_THROTTLE_REGISTER_LIMIT ?? '3', 10);
+const AUTH_LOGIN_THROTTLE_LIMIT = parseInt(process.env.AUTH_THROTTLE_LOGIN_LIMIT ?? '5', 10);
+
 /** Limites plus strictes que la limite globale (Phase 11) : ces routes sont `@Public()` (pas de JWT) et donc les cibles privilégiées du brute-force/credential stuffing. */
 @ApiTags('Authentification')
 @Controller('auth')
@@ -27,7 +36,7 @@ export class AuthController {
   ) {}
 
   @Public()
-  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Throttle({ default: { limit: AUTH_REGISTER_THROTTLE_LIMIT, ttl: 60_000 } })
   @Post('register')
   @ResponseMessage('Établissement créé. Connectez-vous pour continuer.')
   register(@Body() dto: RegisterDto) {
@@ -35,7 +44,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: AUTH_LOGIN_THROTTLE_LIMIT, ttl: 60_000 } })
   @Post('login')
   @ResponseMessage('Connexion réussie.')
   async login(@Body() dto: LoginDto, @Req() req: Request) {
