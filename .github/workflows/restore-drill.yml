@@ -1,0 +1,50 @@
+name: Restore Drill
+
+# Phase 31 : valide chaque semaine que la DERNIÈRE sauvegarde hors-site est réellement restaurable
+# (infrastructure/docker/backup/restore-drill.sh) — dans des conteneurs Postgres/MongoDB jetables et
+# isolés, jamais contre une base réelle. Tant qu'aucun fournisseur de stockage hors-site n'a de
+# vraies credentials (secrets ci-dessous absents), le job se termine en succès avec un simple
+# avertissement plutôt que d'échouer à chaque exécution planifiée — voir docs/plan-de-reprise.md.
+on:
+  schedule:
+    - cron: "0 4 * * 1" # chaque lundi 04:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  restore-drill:
+    name: Restore drill (sauvegarde hors-site)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier que le hors-site est configuré
+        id: check
+        run: |
+          if [ -n "${{ secrets.OFFSITE_BACKUP_BUCKET }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Avertir si non configuré
+        if: steps.check.outputs.configured == 'false'
+        run: echo "::warning::Restore drill ignoré — secret OFFSITE_BACKUP_BUCKET absent (aucune credential hors-site fournie pour l'instant). Voir docs/plan-de-reprise.md."
+
+      - name: Installer rclone
+        if: steps.check.outputs.configured == 'true'
+        run: curl -fsSL https://rclone.org/install.sh | sudo bash
+
+      - name: Exécuter le restore drill
+        if: steps.check.outputs.configured == 'true'
+        env:
+          OFFSITE_BACKUP_BUCKET: ${{ secrets.OFFSITE_BACKUP_BUCKET }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          RCLONE_CONFIG_OFFSITE_TYPE: ${{ secrets.RCLONE_CONFIG_OFFSITE_TYPE }}
+          RCLONE_CONFIG_OFFSITE_PROVIDER: ${{ secrets.RCLONE_CONFIG_OFFSITE_PROVIDER }}
+          RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID: ${{ secrets.RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY: ${{ secrets.RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_OFFSITE_ENDPOINT: ${{ secrets.RCLONE_CONFIG_OFFSITE_ENDPOINT }}
+          RCLONE_CONFIG_OFFSITE_REGION: ${{ secrets.RCLONE_CONFIG_OFFSITE_REGION }}
+        run: |
+          chmod +x infrastructure/docker/backup/restore-drill.sh
+          infrastructure/docker/backup/restore-drill.sh

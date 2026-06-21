@@ -88,7 +88,9 @@ services:
 
   # Sauvegarde quotidienne Postgres + MongoDB (Phase 22, voir docs/plan-de-reprise.md). Identifiants
   # bootstrap/root réutilisés directement (mêmes variables que les services postgres/mongodb
-  # ci-dessus) — aucune nouvelle variable d'environnement nécessaire.
+  # ci-dessus) — aucune nouvelle credential DB à gérer. Phase 31 : chiffrement at-rest (toujours
+  # actif) + envoi hors-site (actif seulement si OFFSITE_BACKUP_ENABLED=true, voir
+  # .env.production.example) — variables transmises telles quelles, jamais codées en dur.
   backup:
     build:
       context: ./infrastructure/docker/backup
@@ -103,6 +105,15 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-sih_saas}
       MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB:-sih_saas}?authSource=admin
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_ENCRYPTION_PASSPHRASE: ${BACKUP_ENCRYPTION_PASSPHRASE}
+      OFFSITE_BACKUP_ENABLED: ${OFFSITE_BACKUP_ENABLED:-false}
+      OFFSITE_BACKUP_BUCKET: ${OFFSITE_BACKUP_BUCKET:-}
+      RCLONE_CONFIG_OFFSITE_TYPE: ${RCLONE_CONFIG_OFFSITE_TYPE:-s3}
+      RCLONE_CONFIG_OFFSITE_PROVIDER: ${RCLONE_CONFIG_OFFSITE_PROVIDER:-Other}
+      RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID: ${RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY: ${RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY:-}
+      RCLONE_CONFIG_OFFSITE_ENDPOINT: ${RCLONE_CONFIG_OFFSITE_ENDPOINT:-}
+      RCLONE_CONFIG_OFFSITE_REGION: ${RCLONE_CONFIG_OFFSITE_REGION:-auto}
     volumes:
       - sih_saas_backups_data:/backups
     networks:
