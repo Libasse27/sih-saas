@@ -126,7 +126,7 @@ onMounted(charger);
           style="width: 320px"
           @search="rechercherParIdh"
         />
-        <a-button type="primary" @click="ouvrirCreation">Nouveau patient</a-button>
+        <a-button type="primary" data-cy="patient-nouveau" @click="ouvrirCreation">Nouveau patient</a-button>
       </a-space>
     </div>
 
@@ -135,6 +135,7 @@ onMounted(charger);
       :data-source="items"
       :loading="chargement"
       row-key="id"
+      data-cy="patients-table"
       :pagination="{ current: pagination.page, pageSize: pagination.limit, total: pagination.total, onChange: changerPage }"
     >
       <template #bodyCell="{ column, record }">
@@ -147,14 +148,23 @@ onMounted(charger);
       </template>
     </a-table>
 
-    <a-modal v-model:open="modalOuvert" title="Nouveau patient" :confirm-loading="enregistrement" @ok="soumettre">
+    <a-modal
+      v-model:open="modalOuvert"
+      title="Nouveau patient"
+      :confirm-loading="enregistrement"
+      ok-text="Créer"
+      :ok-button-props="{ 'data-cy': 'patient-modal-ok' } as Record<string, unknown>"
+      @ok="soumettre"
+    >
       <a-form layout="vertical">
         <a-space>
-          <a-form-item label="Nom"><a-input v-model:value="formulaire.nom" /></a-form-item>
-          <a-form-item label="Prénom"><a-input v-model:value="formulaire.prenom" /></a-form-item>
+          <a-form-item label="Nom"><a-input v-model:value="formulaire.nom" data-cy="patient-nom" /></a-form-item>
+          <a-form-item label="Prénom"><a-input v-model:value="formulaire.prenom" data-cy="patient-prenom" /></a-form-item>
         </a-space>
         <a-space>
-          <a-form-item label="Date de naissance"><a-input v-model:value="formulaire.dateNaissance" type="date" /></a-form-item>
+          <a-form-item label="Date de naissance">
+            <a-input v-model:value="formulaire.dateNaissance" type="date" data-cy="patient-date-naissance" />
+          </a-form-item>
           <a-form-item label="Sexe">
             <a-select v-model:value="formulaire.sexe" style="width: 140px">
               <a-select-option :value="Sexe.M">Masculin</a-select-option>

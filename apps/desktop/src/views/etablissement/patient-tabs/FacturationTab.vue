@@ -182,12 +182,14 @@ onMounted(charger);
         <a-table-column title="Part patient" :customRender="rendrePartPatient" />
         <a-table-column title="Statut">
           <template #default="{ record }">
-            <a-tag :color="COULEUR_STATUT_FACTURE[record.statut as FacturePatientStatut]">{{ LIBELLE_STATUT_FACTURE[record.statut as FacturePatientStatut] }}</a-tag>
+            <a-tag data-cy="facture-statut" :color="COULEUR_STATUT_FACTURE[record.statut as FacturePatientStatut]">
+              {{ LIBELLE_STATUT_FACTURE[record.statut as FacturePatientStatut] }}
+            </a-tag>
           </template>
         </a-table-column>
         <a-table-column title="Actions">
           <template #default="{ record }">
-            <a-button size="small" @click="ouvrirPaiements(record)">Paiements</a-button>
+            <a-button size="small" data-cy="facture-paiements" @click="ouvrirPaiements(record)">Paiements</a-button>
           </template>
         </a-table-column>
       </a-table>
@@ -239,7 +241,9 @@ onMounted(charger);
             </a-select>
           </a-form-item>
           <a-form-item>
-            <a-button type="primary" :loading="enregistrementPaiement" @click="soumettrePaiement">Encaisser</a-button>
+            <a-button type="primary" data-cy="paiement-encaisser" :loading="enregistrementPaiement" @click="soumettrePaiement">
+              Encaisser
+            </a-button>
           </a-form-item>
         </a-form>
       </a-spin>

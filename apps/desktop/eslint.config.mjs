@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import pluginCypress from 'eslint-plugin-cypress';
 import pluginVue from 'eslint-plugin-vue';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -40,6 +41,17 @@ export default tseslint.config(
     files: ['electron/**/*.ts'],
     languageOptions: {
       globals: { ...globals.node },
+    },
+  },
+  {
+    // cypress/**/*.ts a son propre tsconfig.json (types cypress, jamais inclus dans celui du
+    // renderer) — globals cy/Cypress/describe/it + règles dédiées via la config recommandée
+    // officielle du plugin (déjà un objet de config plat complet : plugins + languageOptions + rules).
+    files: ['cypress/**/*.ts', 'cypress.config.ts'],
+    ...pluginCypress.configs.recommended,
+    languageOptions: {
+      ...pluginCypress.configs.recommended.languageOptions,
+      globals: { ...globals.node, ...pluginCypress.configs.recommended.languageOptions.globals },
     },
   },
 );

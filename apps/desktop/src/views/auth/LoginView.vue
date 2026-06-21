@@ -44,19 +44,25 @@ async function soumettre(): Promise<void> {
 <template>
   <div class="conteneur">
     <a-card title="SIH SaaS — Connexion" class="carte">
-      <a-alert v-if="erreur" type="error" :message="erreur" show-icon style="margin-bottom: 16px" />
+      <a-alert v-if="erreur" type="error" :message="erreur" show-icon style="margin-bottom: 16px" data-cy="login-error" />
       <a-form layout="vertical" @finish="soumettre">
         <a-form-item label="Adresse e-mail">
-          <a-input v-model:value="formulaire.email" type="email" autocomplete="username" placeholder="vous@etablissement.sn" />
+          <a-input
+            v-model:value="formulaire.email"
+            type="email"
+            autocomplete="username"
+            placeholder="vous@etablissement.sn"
+            data-cy="login-email"
+          />
         </a-form-item>
         <a-form-item label="Mot de passe">
-          <a-input-password v-model:value="formulaire.motDePasse" autocomplete="current-password" />
+          <a-input-password v-model:value="formulaire.motDePasse" autocomplete="current-password" data-cy="login-password" />
         </a-form-item>
         <a-form-item v-if="mfaRequis" label="Code de double authentification (MFA)">
           <a-input v-model:value="formulaire.mfaCode" placeholder="123456" maxlength="6" autofocus />
         </a-form-item>
         <a-form-item>
-          <a-button type="primary" html-type="submit" :loading="enCours" block>
+          <a-button type="primary" html-type="submit" :loading="enCours" block data-cy="login-submit">
             Se connecter
           </a-button>
         </a-form-item>
