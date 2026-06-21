@@ -1,5 +1,6 @@
 import { FacturePatientStatut } from '@sih-saas/shared';
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { numericTransformer } from '../../../../shared/transformers/numeric.transformer';
 
 export interface LigneFacture {
   libelle: string;
@@ -30,13 +31,13 @@ export class FacturePatientEntity {
   @Column({ type: 'jsonb' })
   lignes: LigneFacture[];
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   montantTotal: number;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   partAssurance: number;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   partPatient: number;
 
   @Column({ type: 'enum', enum: FacturePatientStatut, default: FacturePatientStatut.EN_ATTENTE })

@@ -28,11 +28,15 @@ describe('Paiement caisse d’une facture patient', () => {
 
                 cy.visit(`/#/etablissement/patients/${patientId}`);
                 cy.contains('.ant-card', 'IDH').should('be.visible');
-                cy.wait(500);
                 cy.contains('.ant-tabs-tab-btn', 'Facturation').click({ force: true });
                 cy.contains('.ant-tabs-tab-active', 'Facturation').should('exist');
 
                 cy.get('[data-cy=facture-paiements]').first().click();
+                // `ouvrirPaiements()` pré-remplit le montant de façon asynchrone (après l'ouverture
+                // de la modale) — attendre que le champ reflète la vraie valeur avant d'encaisser,
+                // sinon le clic peut partir alors que `nouveauPaiement.montant` est encore à 0
+                // (valeur initiale du reactive), rejeté par la validation backend (`@Min(1)`).
+                cy.get('[data-cy=paiement-montant]').should('have.value', '5000');
                 cy.get('[data-cy=paiement-encaisser]').click();
 
                 cy.contains('Paiement enregistré').should('be.visible');

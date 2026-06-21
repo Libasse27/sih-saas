@@ -1,5 +1,6 @@
 import { StatutCreanceAssurance } from '@sih-saas/shared';
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { numericTransformer } from '../../../../shared/transformers/numeric.transformer';
 
 /**
  * Suivi interne des créances assurance (tiers-payant, Phase 17) — remplace le suivi papier, pas une
@@ -23,7 +24,7 @@ export class CreanceAssuranceEntity {
   @Column({ type: 'uuid' })
   assuranceId: string;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   montant: number;
 
   @Column({ type: 'enum', enum: StatutCreanceAssurance, default: StatutCreanceAssurance.A_SOUMETTRE })

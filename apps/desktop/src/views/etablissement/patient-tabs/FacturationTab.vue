@@ -234,7 +234,9 @@ onMounted(charger);
         </a-list>
 
         <a-form v-if="peutEncaisser && factureEnCours && factureEnCours.statut !== FacturePatientStatut.PAYEE" layout="inline">
-          <a-form-item label="Montant"><a-input-number v-model:value="nouveauPaiement.montant" :min="1" /></a-form-item>
+          <a-form-item label="Montant">
+            <a-input-number v-model:value="nouveauPaiement.montant" :min="1" data-cy="paiement-montant" />
+          </a-form-item>
           <a-form-item label="Mode">
             <a-select v-model:value="nouveauPaiement.mode" style="width: 140px">
               <a-select-option v-for="mode in Object.values(ModePaiementPatient)" :key="mode" :value="mode">{{ mode }}</a-select-option>

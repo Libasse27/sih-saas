@@ -113,7 +113,7 @@ Cypress.Commands.add('createStaffUser', (adminToken: string, roles: string[]) =>
       headers: { Authorization: `Bearer ${adminToken}` },
       body: { scope: 'ETABLISSEMENT', nom: 'E2E', prenom: 'Staff', email, password: motDePasse, roles },
     })
-    .then(() => ({ email, motDePasse }));
+    .then((reponse) => ({ id: reponse.body.data.id as string, email, motDePasse }));
 });
 
 declare global {
@@ -124,7 +124,7 @@ declare global {
       loginUi(email: string, motDePasse: string): Chainable<void>;
       apiLogin(email: string, motDePasse: string): Chainable<string>;
       loginSession(email: string, motDePasse: string): Chainable<void>;
-      createStaffUser(adminToken: string, roles: string[]): Chainable<{ email: string; motDePasse: string }>;
+      createStaffUser(adminToken: string, roles: string[]): Chainable<{ id: string; email: string; motDePasse: string }>;
     }
   }
 }

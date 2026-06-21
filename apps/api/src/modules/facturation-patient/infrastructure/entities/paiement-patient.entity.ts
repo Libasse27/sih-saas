@@ -1,5 +1,6 @@
 import { ModePaiementPatient, PaymentStatut } from '@sih-saas/shared';
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { numericTransformer } from '../../../../shared/transformers/numeric.transformer';
 
 /**
  * Flux soins (patient -> établissement) — strictement séparé de `platform.payments` (flux
@@ -19,7 +20,7 @@ export class PaiementPatientEntity {
   @Column({ type: 'uuid' })
   facturePatientId: string;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   montant: number;
 
   @Column({ type: 'enum', enum: ModePaiementPatient })

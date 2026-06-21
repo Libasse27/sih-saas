@@ -147,7 +147,7 @@ onMounted(async () => {
             {{ LIBELLE_STATUT[statut] }}
           </a-select-option>
         </a-select>
-        <a-button type="primary" @click="ouvrirCreation">Nouveau rendez-vous</a-button>
+        <a-button type="primary" data-cy="rdv-nouveau" @click="ouvrirCreation">Nouveau rendez-vous</a-button>
       </a-space>
     </div>
 
@@ -174,13 +174,21 @@ onMounted(async () => {
       </template>
     </a-table>
 
-    <a-modal v-model:open="modalOuvert" title="Nouveau rendez-vous" :footer="etapeRecherchePatient ? null : undefined" :confirm-loading="enregistrement" @ok="soumettre">
+    <a-modal
+      v-model:open="modalOuvert"
+      title="Nouveau rendez-vous"
+      :footer="etapeRecherchePatient ? null : undefined"
+      :confirm-loading="enregistrement"
+      :ok-button-props="{ 'data-cy': 'rdv-modal-ok' } as Record<string, unknown>"
+      @ok="soumettre"
+    >
       <template v-if="etapeRecherchePatient">
         <a-input-search
           v-model:value="idhRecherche"
           placeholder="Rechercher le patient par IDH"
           enter-button="Rechercher"
           :loading="rechercheEnCours"
+          data-cy="rdv-recherche-idh"
           @search="rechercherPatient"
         />
       </template>
@@ -193,14 +201,14 @@ onMounted(async () => {
         />
         <a-form layout="vertical">
           <a-form-item label="Praticien">
-            <a-select v-model:value="formulaire.praticienId" placeholder="Choisir un praticien">
+            <a-select v-model:value="formulaire.praticienId" placeholder="Choisir un praticien" data-cy="rdv-praticien">
               <a-select-option v-for="praticien in praticiens" :key="praticien.id" :value="praticien.id">
                 {{ praticien.prenom }} {{ praticien.nom }}
               </a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item label="Date et heure">
-            <a-input v-model:value="formulaire.dateHeure" type="datetime-local" />
+            <a-input v-model:value="formulaire.dateHeure" type="datetime-local" data-cy="rdv-date-heure" />
           </a-form-item>
           <a-form-item label="Durée (minutes)">
             <a-input-number v-model:value="formulaire.dureeMin" :min="5" />

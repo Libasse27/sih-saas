@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { numericTransformer } from '../../../../shared/transformers/numeric.transformer';
 
 export interface SubscriptionHistoriqueEntry {
   date: string;
@@ -45,7 +46,7 @@ export class SubscriptionEntity {
   @Column({ type: 'enum', enum: SubscriptionStatut })
   statut: SubscriptionStatut;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   montant: number;
 
   @Column()

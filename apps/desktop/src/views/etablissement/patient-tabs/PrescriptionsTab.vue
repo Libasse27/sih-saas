@@ -181,10 +181,14 @@ onMounted(charger);
           <a-list-item>
             <a-list-item-meta :description="new Date(item.date).toLocaleString('fr-SN')">
               <template #title>
-                <a @click="ouvrirDetail(item)">Prescription du {{ new Date(item.date).toLocaleDateString('fr-SN') }}</a>
+                <a data-cy="prescription-ouvrir" @click="ouvrirDetail(item)">
+                  Prescription du {{ new Date(item.date).toLocaleDateString('fr-SN') }}
+                </a>
               </template>
             </a-list-item-meta>
-            <a-tag :color="COULEUR_STATUT[item.statut as PrescriptionStatut]">{{ LIBELLE_STATUT[item.statut as PrescriptionStatut] }}</a-tag>
+            <a-tag data-cy="prescription-statut" :color="COULEUR_STATUT[item.statut as PrescriptionStatut]">
+              {{ LIBELLE_STATUT[item.statut as PrescriptionStatut] }}
+            </a-tag>
           </a-list-item>
         </template>
       </a-list>
@@ -220,7 +224,13 @@ onMounted(charger);
             <a-table-column v-if="detailEnCours.statut === PrescriptionStatut.VALIDEE && peutDispenser" title="Lot à dispenser">
               <template #default="{ record }">
                 <a-space>
-                  <a-select v-model:value="dispensationSelections[record.id].stockMedicamentId" size="small" style="width: 160px" placeholder="Lot">
+                  <a-select
+                    v-model:value="dispensationSelections[record.id].stockMedicamentId"
+                    size="small"
+                    style="width: 160px"
+                    placeholder="Lot"
+                    data-cy="dispensation-lot"
+                  >
                     <a-select-option v-for="lot in stockParMedicament[record.medicamentId] ?? []" :key="lot.id" :value="lot.id">
                       {{ lot.lot }} ({{ lot.quantite }} dispo.)
                     </a-select-option>
@@ -238,7 +248,12 @@ onMounted(charger);
             <a-button v-if="peutValider && detailEnCours.statut !== PrescriptionStatut.DISPENSEE && detailEnCours.statut !== PrescriptionStatut.ANNULEE" danger @click="annulerPrescription">
               Annuler
             </a-button>
-            <a-button v-if="peutDispenser && detailEnCours.statut === PrescriptionStatut.VALIDEE" type="primary" @click="dispenser">
+            <a-button
+              v-if="peutDispenser && detailEnCours.statut === PrescriptionStatut.VALIDEE"
+              type="primary"
+              data-cy="prescription-dispenser"
+              @click="dispenser"
+            >
               Dispenser
             </a-button>
           </a-space>

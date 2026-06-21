@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { numericTransformer } from '../../../../shared/transformers/numeric.transformer';
 
 /**
  * Paiement d'ABONNEMENT (établissement -> plateforme) — à ne jamais confondre avec
@@ -37,7 +38,7 @@ export class PaymentEntity {
   @Column({ unique: true })
   reference: string;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   montant: number;
 
   @Column()

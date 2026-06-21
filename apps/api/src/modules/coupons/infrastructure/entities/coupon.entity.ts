@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { TypeReduction } from '@sih-saas/shared';
+import { numericTransformer } from '../../../../shared/transformers/numeric.transformer';
 
 /** Référentiel plateforme, pas de tenant — pas de RLS (voir platform.users/platform.api_keys). */
 @Entity({ schema: 'platform', name: 'coupons' })
@@ -13,7 +14,7 @@ export class CouponEntity {
   @Column({ type: 'enum', enum: TypeReduction })
   typeReduction: TypeReduction;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', transformer: numericTransformer })
   valeur: number;
 
   @Column({ type: 'text', nullable: true })
