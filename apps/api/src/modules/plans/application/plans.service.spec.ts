@@ -9,6 +9,7 @@ describe('PlansService', () => {
     create: jest.Mock;
     save: jest.Mock;
   };
+  let redis: { getJSON: jest.Mock; setJSON: jest.Mock; del: jest.Mock };
   let service: PlansService;
 
   const buildPlan = (overrides: Partial<PlanEntity> = {}): PlanEntity =>
@@ -38,7 +39,21 @@ describe('PlansService', () => {
       create: jest.fn((entity) => entity),
       save: jest.fn((entity) => entity),
     };
-    service = new PlansService(repository as any);
+    // Mock Redis avec état réel (Map) — pas seulement des jest.fn() vides — pour vérifier la
+    // véritable intégration get/set/del de RedisService, pas juste que les méthodes sont appelées.
+    const store = new Map<string, unknown>();
+    redis = {
+      getJSON: jest.fn((key: string) => Promise.resolve(store.has(key) ? store.get(key) : null)),
+      setJSON: jest.fn((key: string, value: unknown) => {
+        store.set(key, value);
+        return Promise.resolve();
+      }),
+      del: jest.fn((key: string) => {
+        store.delete(key);
+        return Promise.resolve();
+      }),
+    };
+    service = new PlansService(repository as any, redis as any);
   });
 
   it('rejette la création d’un plan dont le code existe déjà', async () => {

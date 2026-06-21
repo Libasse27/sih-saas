@@ -1,19 +1,20 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { RedisService } from '../../../shared/redis/redis.service';
 import { PlanEntity } from '../infrastructure/entities/plan.entity';
 import { CreatePlanDto } from '../presentation/dto/create-plan.dto';
 import { UpdatePlanDto } from '../presentation/dto/update-plan.dto';
 
-const PUBLIC_CACHE_TTL_MS = 60_000;
+const PUBLIC_CACHE_KEY = 'cache:plans:public';
+const PUBLIC_CACHE_TTL_SECONDS = 60;
 
 @Injectable()
 export class PlansService {
-  // Cache mémoire simple pour GET /api/plans (public) — invalidé à chaque écriture.
-  // Pas de Redis ici : un seul instance d'API pour l'instant, voir docs/phase-0/plan-de-phases.md.
-  private publicCache: { plans: PlanEntity[]; cachedAt: number } | null = null;
-
-  constructor(@InjectRepository(PlanEntity) private readonly repository: Repository<PlanEntity>) {}
+  constructor(
+    @InjectRepository(PlanEntity) private readonly repository: Repository<PlanEntity>,
+    private readonly redis: RedisService,
+  ) {}
 
   async create(dto: CreatePlanDto): Promise<PlanEntity> {
     const existing = await this.repository.findOne({ where: { code: dto.code } });
@@ -29,21 +30,26 @@ export class PlansService {
         ordreAffichage: dto.ordreAffichage ?? 0,
       }),
     );
-    this.invalidatePublicCache();
+    await this.invalidatePublicCache();
     return plan;
   }
 
-  /** Catalogue public (page de tarifs) : uniquement les plans visibles et actifs, mis en cache. */
+  /**
+   * Catalogue public (page de tarifs) : uniquement les plans visibles et actifs, mis en cache —
+   * Redis (Phase 27), remplace le cache mémoire mono-instance d'origine (Phase 3/9, voir
+   * historique git) qui ne survivait pas à plusieurs instances API derrière un load balancer.
+   */
   async findPublic(): Promise<PlanEntity[]> {
-    if (this.publicCache && Date.now() - this.publicCache.cachedAt < PUBLIC_CACHE_TTL_MS) {
-      return this.publicCache.plans;
+    const cached = await this.redis.getJSON<PlanEntity[]>(PUBLIC_CACHE_KEY);
+    if (cached) {
+      return cached;
     }
 
     const plans = await this.repository.find({
       where: { visible: true, actif: true },
       order: { ordreAffichage: 'ASC' },
     });
-    this.publicCache = { plans, cachedAt: Date.now() };
+    await this.redis.setJSON(PUBLIC_CACHE_KEY, plans, PUBLIC_CACHE_TTL_SECONDS);
     return plans;
   }
 
@@ -64,7 +70,7 @@ export class PlansService {
     const plan = await this.findById(id);
     Object.assign(plan, dto, { version: plan.version + 1 });
     const saved = await this.repository.save(plan);
-    this.invalidatePublicCache();
+    await this.invalidatePublicCache();
     return saved;
   }
 
@@ -72,11 +78,11 @@ export class PlansService {
     const plan = await this.findById(id);
     plan.actif = actif;
     const saved = await this.repository.save(plan);
-    this.invalidatePublicCache();
+    await this.invalidatePublicCache();
     return saved;
   }
 
-  private invalidatePublicCache(): void {
-    this.publicCache = null;
+  private async invalidatePublicCache(): Promise<void> {
+    await this.redis.del(PUBLIC_CACHE_KEY);
   }
 }

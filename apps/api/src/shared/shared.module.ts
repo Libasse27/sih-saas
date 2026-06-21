@@ -1,3 +1,4 @@
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -9,6 +10,8 @@ import { ScopesGuard } from './guards/scopes.guard';
 import { TenantGuard } from './guards/tenant.guard';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { TenantRlsInterceptor } from './interceptors/tenant-rls.interceptor';
+import { RedisModule } from './redis/redis.module';
+import { RedisService } from './redis/redis.service';
 import { TenantContextMiddleware } from './tenant/tenant-context.middleware';
 import { TenantContextService } from './tenant/tenant-context.service';
 
@@ -22,8 +25,18 @@ import { TenantContextService } from './tenant/tenant-context.service';
 @Global()
 @Module({
   imports: [
-    ThrottlerModule.forRoot({
-      throttlers: [{ name: 'default', ttl: 60_000, limit: 100 }],
+    RedisModule,
+    // Store partagé Redis (Phase 27) — jusqu'ici en mémoire par instance (Phase 11), ce qui
+    // laisserait chaque instance API compter ses propres requêtes si l'app tournait un jour sur
+    // plusieurs instances derrière un load balancer (un attaquant pourrait alors contourner la
+    // limite en répartissant ses requêtes). Un seul conteneur api en production à ce jour (voir
+    // docker-compose.prod.yml), mais Redis est déjà provisionné précisément pour cet usage.
+    ThrottlerModule.forRootAsync({
+      inject: [RedisService],
+      useFactory: (redisService: RedisService) => ({
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 100 }],
+        storage: new ThrottlerStorageRedisService(redisService.getClient()),
+      }),
     }),
     ApiKeysModule,
   ],
