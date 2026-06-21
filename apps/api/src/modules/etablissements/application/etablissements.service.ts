@@ -7,6 +7,7 @@ import { deriverCodeBase } from '../domain/code-generator';
 import { EtablissementEntity, EtablissementUsage } from '../infrastructure/entities/etablissement.entity';
 import { CreateEtablissementDto } from '../presentation/dto/create-etablissement.dto';
 import { UpdateEtablissementCdpDto } from '../presentation/dto/update-etablissement-cdp.dto';
+import { UpdateEtablissementProfilDto } from '../presentation/dto/update-etablissement-profil.dto';
 
 @Injectable()
 export class EtablissementsService {
@@ -97,6 +98,29 @@ export class EtablissementsService {
       ressource: 'etablissement',
       ressourceId: etablissement.id,
       metadata: { statut: dto.statut },
+    });
+
+    return etablissement;
+  }
+
+  /**
+   * Self-service (gap audit du 2026-06-21 : aucun `PATCH /etablissements/me` n'existait — seul le
+   * super-admin pouvait modifier quoi que ce soit sur un établissement). Volontairement restreint
+   * aux champs administratifs (voir UpdateEtablissementProfilDto) — jamais le statut, l'identité
+   * légale ou les compteurs/usage, qui restent gérés par leurs flux dédiés respectifs.
+   */
+  async updateProfil(id: string, dto: UpdateEtablissementProfilDto, actingUserId: string | null): Promise<EtablissementEntity> {
+    const etablissement = await this.findById(id);
+    Object.assign(etablissement, dto);
+    await this.repository.save(etablissement);
+
+    await this.auditService.log({
+      etablissementId: etablissement.id,
+      userId: actingUserId,
+      action: 'etablissement.profil.update',
+      ressource: 'etablissement',
+      ressourceId: etablissement.id,
+      metadata: { champs: Object.keys(dto) },
     });
 
     return etablissement;

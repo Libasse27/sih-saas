@@ -28,6 +28,7 @@ import { ImagerieFileController } from './presentation/imagerie-file.controller'
   ],
   controllers: [DemandesImagerieController, ImagerieFileController],
   providers: [DemandesImagerieService, ComptesRendusImagerieService],
-  exports: [DemandesImagerieService],
+  // ComptesRendusImagerieService exporté en plus depuis Phase 32 — nécessaire à FhirService (DiagnosticReport).
+  exports: [DemandesImagerieService, ComptesRendusImagerieService],
 })
 export class ImagerieModule {}

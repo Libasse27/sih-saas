@@ -77,6 +77,17 @@ export class FhirController {
     return construireBundle(resources);
   }
 
+  @Get('Practitioner/:id')
+  findPractitioner(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() currentUser: JwtPayload) {
+    return this.fhirService.getPractitioner(id, this.contexte(currentUser));
+  }
+
+  @Get('DiagnosticReport')
+  async findDiagnosticReports(@Query('patient', ParseUUIDPipe) patientId: string, @CurrentUser() currentUser: JwtPayload) {
+    const resources = await this.fhirService.getDiagnosticReportsPourPatient(patientId, this.contexte(currentUser));
+    return construireBundle(resources);
+  }
+
   private contexte(currentUser: JwtPayload): AuditContext {
     return { etablissementId: currentUser.etablissementId!, apiKeyId: currentUser.sub };
   }

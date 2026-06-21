@@ -28,6 +28,7 @@ import { LaboratoireFileController } from './presentation/laboratoire-file.contr
   ],
   controllers: [DemandesAnalyseController, LaboratoireFileController],
   providers: [DemandesAnalyseService, ResultatsAnalyseService],
-  exports: [DemandesAnalyseService],
+  // ResultatsAnalyseService exporté en plus depuis Phase 32 — nécessaire à FhirService (DiagnosticReport).
+  exports: [DemandesAnalyseService, ResultatsAnalyseService],
 })
 export class LaboratoireModule {}

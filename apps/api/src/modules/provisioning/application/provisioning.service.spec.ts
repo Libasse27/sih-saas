@@ -7,6 +7,8 @@ describe('ProvisioningService', () => {
   let usersService: { findById: jest.Mock };
   let mailService: { envoyerBienvenue: jest.Mock };
   let auditService: { log: jest.Mock };
+  let servicesService: { create: jest.Mock };
+  let tenantContext: { runForEtablissement: jest.Mock };
   let service: ProvisioningService;
 
   beforeEach(() => {
@@ -17,6 +19,8 @@ describe('ProvisioningService', () => {
     usersService = { findById: jest.fn().mockResolvedValue({ id: 'admin-1', email: 'admin@clinique.sn' }) };
     mailService = { envoyerBienvenue: jest.fn() };
     auditService = { log: jest.fn() };
+    servicesService = { create: jest.fn().mockResolvedValue({ id: 'service-1' }) };
+    tenantContext = { runForEtablissement: jest.fn((_id: string, callback: () => Promise<unknown>) => callback()) };
 
     service = new ProvisioningService(
       subscriptionsService as any,
@@ -24,6 +28,8 @@ describe('ProvisioningService', () => {
       usersService as any,
       mailService as any,
       auditService as any,
+      servicesService as any,
+      tenantContext as any,
     );
   });
 
@@ -40,6 +46,11 @@ describe('ProvisioningService', () => {
       expect.objectContaining({ action: 'etablissement.provisionne', etablissementId: 'etab-1' }),
     );
     expect(subscription.id).toBe('sub-1');
+    expect(tenantContext.runForEtablissement).toHaveBeenCalledWith('etab-1', expect.any(Function));
+    expect(servicesService.create).toHaveBeenCalledTimes(3);
+    expect(servicesService.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'CONSULT' }), 'admin-1');
+    expect(servicesService.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'HOSPIT' }), 'admin-1');
+    expect(servicesService.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'URGENCES' }), 'admin-1');
   });
 
   it("n'échoue pas si l'envoi de l'email de bienvenue échoue", async () => {
@@ -47,6 +58,13 @@ describe('ProvisioningService', () => {
 
     await expect(service.provisionner('etab-1', 'plan-1', Periodicite.ANNUEL)).resolves.toBeDefined();
     expect(auditService.log).toHaveBeenCalled();
+  });
+
+  it("n'échoue pas si la création des services par défaut échoue", async () => {
+    tenantContext.runForEtablissement.mockRejectedValue(new Error('RLS indisponible'));
+
+    await expect(service.provisionner('etab-1', 'plan-1', Periodicite.MENSUEL)).resolves.toBeDefined();
+    expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'etablissement.provisionne' }));
   });
 
   it('transmet couponApplique/montantOverride à subscribe() quand fournis', async () => {

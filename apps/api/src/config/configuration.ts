@@ -68,5 +68,12 @@ export default () => ({
       merchantKey: process.env.ORANGE_MONEY_MERCHANT_KEY,
       env: process.env.ORANGE_MONEY_ENV ?? 'dev',
     },
+    // Stripe (Phase 32) — https://docs.stripe.com/api/checkout/sessions/create. Sert aussi
+    // PaymentProviderType.CARTE (alias, voir PaymentGatewayRegistry) ; support réel du XOF non
+    // confirmé par Stripe, voir la réserve en tête de stripe-payment-gateway.ts.
+    stripe: {
+      secretKey: process.env.STRIPE_SECRET_KEY,
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    },
   },
 });

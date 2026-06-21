@@ -3,10 +3,12 @@ import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ApiKeysModule } from '../modules/api-keys/api-keys.module';
+import { EtablissementsModule } from '../modules/etablissements/etablissements.module';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { ScopesGuard } from './guards/scopes.guard';
+import { SubscriptionStatusGuard } from './guards/subscription-status.guard';
 import { TenantGuard } from './guards/tenant.guard';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { TenantRlsInterceptor } from './interceptors/tenant-rls.interceptor';
@@ -18,7 +20,9 @@ import { TenantContextService } from './tenant/tenant-context.service';
 /**
  * Regroupe les éléments transversaux appliqués à toute l'API.
  * Pipeline de guards (voir docs/phase-0/architecture-modules-nestjs.md §3) :
- * ThrottlerGuard -> JwtAuthGuard -> TenantGuard -> ScopesGuard -> PermissionsGuard -> [CareContextGuard, Phase 5].
+ * ThrottlerGuard -> JwtAuthGuard -> TenantGuard -> SubscriptionStatusGuard -> ScopesGuard -> PermissionsGuard -> [CareContextGuard, Phase 5].
+ * SubscriptionStatusGuard (Phase 32) : applique réellement EXPIRE/SUSPENDU, jusqu'ici de purs
+ * statuts cosmétiques jamais vérifiés par aucun guard (gap trouvé à l'audit du 2026-06-21).
  * ThrottlerGuard passe en premier (Phase 11) : limiter même les requêtes non authentifiées
  * (brute-force login) avant qu'elles n'atteignent JwtAuthGuard.
  */
@@ -39,12 +43,14 @@ import { TenantContextService } from './tenant/tenant-context.service';
       }),
     }),
     ApiKeysModule,
+    EtablissementsModule,
   ],
   providers: [
     TenantContextService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
+    { provide: APP_GUARD, useClass: SubscriptionStatusGuard },
     { provide: APP_GUARD, useClass: ScopesGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },

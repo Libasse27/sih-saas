@@ -19,6 +19,8 @@ export const PROVIDER_PARAM_VERS_TYPE: Record<string, PaymentProviderType> = {
   sandbox: PaymentProviderType.SANDBOX,
   wave: PaymentProviderType.WAVE,
   'orange-money': PaymentProviderType.ORANGE_MONEY,
+  stripe: PaymentProviderType.STRIPE,
+  carte: PaymentProviderType.CARTE,
 };
 
 /** Mode de paiement choisi par le patient/caissier -> passerelle technique (Phase 17, pas de Settings ici : le choix est par transaction, pas une configuration plateforme). */

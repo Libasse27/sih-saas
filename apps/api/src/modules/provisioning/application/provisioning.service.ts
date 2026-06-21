@@ -1,18 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Periodicite } from '@sih-saas/shared';
+import { ServicesService } from '../../admissions-lits/application/services.service';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
 import { MailService } from '../../mail/application/mail.service';
 import { SubscriptionEntity } from '../../subscriptions/infrastructure/entities/subscription.entity';
 import { SubscriptionsService } from '../../subscriptions/application/subscriptions.service';
 import { UsersService } from '../../users/application/users.service';
+import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
+
+/** Services/départements créés par défaut à l'activation (gap audit du 2026-06-21, §11) — vide volontairement de tout `responsableId` (personne à affecter encore). */
+const SERVICES_PAR_DEFAUT: ReadonlyArray<{ nom: string; code: string; type: string }> = [
+  { nom: 'Consultations générales', code: 'CONSULT', type: 'CONSULTATION' },
+  { nom: 'Hospitalisation', code: 'HOSPIT', type: 'HOSPITALISATION' },
+  { nom: 'Urgences', code: 'URGENCES', type: 'URGENCES' },
+];
 
 /**
  * Provisionnement post-paiement (ou immédiat si essai gratuit) — prompt maître §11.
  *
- * Volontairement absents pour l'instant : services/départements par défaut, numérotation des
- * dossiers/factures, structure de lits — ces éléments dépendent d'entités du schéma clinique pas
- * encore créées (Patient = Phase 5, Lits = Phase 6, FacturePatient = Phase 8). À compléter alors.
+ * Services/départements par défaut ajoutés en Phase 32 (gap audit). Toujours volontairement
+ * absents : numérotation des dossiers/factures (déjà gérée à la demande par
+ * `EtablissementsService.incrementerCompteur`, pas besoin de seed), structure de LITS (le prompt
+ * maître §11 dit explicitement "structure de lits vide à compléter" — contrairement aux services,
+ * ce n'est PAS un oubli, juste un choix de scope différent).
  */
 @Injectable()
 export class ProvisioningService {
@@ -24,6 +35,8 @@ export class ProvisioningService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly auditService: AuditService,
+    private readonly servicesService: ServicesService,
+    private readonly tenantContext: TenantContextService,
   ) {}
 
   async provisionner(
@@ -49,6 +62,21 @@ export class ProvisioningService {
         // Un échec d'envoi d'email ne doit jamais faire échouer le provisionnement lui-même.
         this.logger.warn(`Échec de l'email de bienvenue pour ${etablissement.nom} : ${(error as Error).message}`);
       }
+    }
+
+    try {
+      // ServicesService passe par tenantContext.getManager() (RLS) — aucun contexte tenant n'est
+      // normalement ouvert ici (appelé depuis des routes @Public(), register/webhook), d'où
+      // runForEtablissement() qui ouvre sa propre transaction RLS pour la durée de cette boucle.
+      await this.tenantContext.runForEtablissement(etablissementId, async () => {
+        for (const service of SERVICES_PAR_DEFAUT) {
+          await this.servicesService.create(service, actingUserId);
+        }
+      });
+    } catch (error) {
+      // Comme l'email : un échec ici ne doit jamais invalider l'abonnement déjà créé — les services
+      // restent créables manuellement ensuite via POST /services.
+      this.logger.warn(`Échec de la création des services par défaut pour ${etablissement.nom} : ${(error as Error).message}`);
     }
 
     await this.auditService.log({

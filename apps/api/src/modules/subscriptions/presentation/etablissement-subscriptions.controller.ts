@@ -1,6 +1,7 @@
 import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { AllowSubscriptionInactive } from '../../../shared/decorators/allow-subscription-inactive.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
@@ -17,6 +18,7 @@ export class EtablissementSubscriptionsController {
   @Get('me/subscription')
   @Scopes(Scope.ETABLISSEMENT)
   @RequirePermissions(Permission.ABONNEMENT_ETABLISSEMENT_VIEW)
+  @AllowSubscriptionInactive()
   @ResponseMessage('Abonnement de mon établissement.')
   async findMine(@CurrentUser() currentUser: JwtPayload) {
     const subscription = await this.subscriptionsService.getActiveForEtablissement(currentUser.etablissementId!);

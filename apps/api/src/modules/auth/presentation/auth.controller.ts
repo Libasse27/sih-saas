@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req } from '@nestjs/
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
+import { AllowSubscriptionInactive } from '../../../shared/decorators/allow-subscription-inactive.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { Public } from '../../../shared/decorators/public.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
@@ -27,6 +28,10 @@ const AUTH_LOGIN_THROTTLE_LIMIT = parseInt(process.env.AUTH_THROTTLE_LOGIN_LIMIT
 /** Limites plus strictes que la limite globale (Phase 11) : ces routes sont `@Public()` (pas de JWT) et donc les cibles privilégiées du brute-force/credential stuffing. */
 @ApiTags('Authentification')
 @Controller('auth')
+// Gestion de session, jamais une activité métier facturée — toujours accessible, même établissement
+// EXPIRE/SUSPENDU (voir SubscriptionStatusGuard) : un admin doit pouvoir se reconnecter/se
+// déconnecter/consulter son profil pour ensuite aller renouveler l'abonnement.
+@AllowSubscriptionInactive()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

@@ -76,4 +76,43 @@ export class TenantContextService {
     const queryRunner = this.getStore()?.queryRunner;
     return queryRunner ? queryRunner.manager : this.dataSource.manager;
   }
+
+  /**
+   * Exécute `callback` comme si une requête HTTP authentifiée ETABLISSEMENT avait ouvert ce
+   * contexte (TenantGuard) — pour du code appelé hors pipeline HTTP standard mais devant néanmoins
+   * écrire dans des tables `clinic.*` protégées par RLS (Phase 32 : ProvisioningService, appelé
+   * depuis des routes `@Public()` — register, webhook paiement — où TenantGuard ne s'exécute jamais).
+   * Ouvre puis referme sa PROPRE transaction et restaure l'état précédent du contexte dans le
+   * `finally`, pour ne jamais interférer avec ce que `TenantRlsInterceptor` gère normalement à la
+   * fin de la requête HTTP en cours (qui peut très bien n'avoir aucune transaction du tout, cas
+   * `@Public()`, ou — en théorie — déjà la sienne si jamais appelé depuis un contexte authentifié).
+   */
+  async runForEtablissement<T>(etablissementId: string, callback: () => Promise<T>): Promise<T> {
+    const store = this.getStore();
+    if (!store) {
+      throw new Error(
+        'runForEtablissement() appelé hors contexte de requête : TenantContextMiddleware est-il bien appliqué ?',
+      );
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    await queryRunner.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [etablissementId]);
+
+    const precedent = { etablissementId: store.etablissementId, queryRunner: store.queryRunner };
+    Object.assign(store, { etablissementId, queryRunner });
+
+    try {
+      const resultat = await callback();
+      await queryRunner.commitTransaction();
+      return resultat;
+    } catch (erreur) {
+      await queryRunner.rollbackTransaction();
+      throw erreur;
+    } finally {
+      Object.assign(store, precedent);
+      await queryRunner.release();
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from '../audit/audit.module';
 import { EtablissementsModule } from '../etablissements/etablissements.module';
@@ -13,7 +13,10 @@ import { UsersController } from './presentation/users.controller';
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity, UserRoleEntity, RolePermissionEntity, UserPermissionEntity]),
-    SubscriptionsModule,
+    // forwardRef : SubscriptionLifecycleService (SubscriptionsModule) a besoin de UsersService pour
+    // résoudre l'email de l'admin à relancer (dunning, Phase 32) — cycle réel avec ce module-ci, qui
+    // a toujours eu besoin de SubscriptionsService pour assertWithinLimit('maxUtilisateurs').
+    forwardRef(() => SubscriptionsModule),
     EtablissementsModule,
     AuditModule,
   ],

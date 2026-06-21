@@ -153,4 +153,24 @@ describe('EtablissementsService', () => {
       expect(resultat.commentaireCdp).toBeNull();
     });
   });
+
+  describe('updateProfil (Phase 32, self-service)', () => {
+    it('met à jour uniquement les champs fournis et journalise', async () => {
+      repository.findOne.mockResolvedValue({
+        id: 'etab-1',
+        nom: 'Ancien nom',
+        adresse: 'Ancienne adresse',
+        statut: EtablissementStatut.ACTIF,
+      });
+
+      const resultat = await service.updateProfil('etab-1', { nom: 'Nouveau nom' }, 'admin-1');
+
+      expect(resultat.nom).toBe('Nouveau nom');
+      expect(resultat.adresse).toBe('Ancienne adresse');
+      expect(resultat.statut).toBe(EtablissementStatut.ACTIF);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'etablissement.profil.update', ressourceId: 'etab-1', metadata: { champs: ['nom'] } }),
+      );
+    });
+  });
 });

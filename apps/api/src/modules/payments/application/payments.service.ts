@@ -24,6 +24,8 @@ export const PROVIDER_PARAM_VERS_TYPE: Record<string, PaymentProviderType> = {
   sandbox: PaymentProviderType.SANDBOX,
   wave: PaymentProviderType.WAVE,
   'orange-money': PaymentProviderType.ORANGE_MONEY,
+  stripe: PaymentProviderType.STRIPE,
+  carte: PaymentProviderType.CARTE,
 };
 
 @Injectable()
