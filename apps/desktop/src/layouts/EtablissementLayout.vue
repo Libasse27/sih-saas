@@ -8,6 +8,7 @@ import {
   KeyOutlined,
   MedicineBoxOutlined,
   MessageOutlined,
+  SafetyCertificateOutlined,
   SafetyOutlined,
   ShopOutlined,
   SmileOutlined,
@@ -95,6 +96,9 @@ const menuItems = computed(() => {
   }
   if (auth.aPermission(Permission.API_KEY_MANAGE)) {
     items.push({ key: 'etablissement-api-keys', label: 'Clés API', icon: KeyOutlined });
+  }
+  if (auth.aPermission(Permission.ETABLISSEMENT_SETTINGS)) {
+    items.push({ key: 'etablissement-conformite', label: 'Conformité', icon: SafetyCertificateOutlined });
   }
   items.push({ key: 'etablissement-securite', label: 'Sécurité', icon: SafetyOutlined });
 

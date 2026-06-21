@@ -60,3 +60,14 @@ export async function updateCdp(id: string, payload: UpdateCdpPayload): Promise<
   const response = await api.patch<ApiResponse<Etablissement>>(`/etablissements/${id}/cdp`, payload);
   return response.data.data;
 }
+
+/** Auto-service établissement (Phase 24) — toujours « mon » établissement, jamais d'id arbitraire. */
+export async function findMyCdp(): Promise<Etablissement> {
+  const response = await api.get<ApiResponse<Etablissement>>('/etablissements/me/cdp');
+  return response.data.data;
+}
+
+export async function updateMyCdp(payload: UpdateCdpPayload): Promise<Etablissement> {
+  const response = await api.patch<ApiResponse<Etablissement>>('/etablissements/me/cdp', payload);
+  return response.data.data;
+}

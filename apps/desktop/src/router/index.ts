@@ -163,6 +163,11 @@ const router = createRouter({
           name: 'etablissement-securite',
           component: () => import('../views/etablissement/SecuriteView.vue'),
         },
+        {
+          path: 'conformite',
+          name: 'etablissement-conformite',
+          component: () => import('../views/etablissement/ConformiteView.vue'),
+        },
       ],
     },
     { path: '/', redirect: { name: 'login' } },
