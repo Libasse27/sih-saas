@@ -1,5 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 interface HttpExceptionBody {
   message?: string | string[];

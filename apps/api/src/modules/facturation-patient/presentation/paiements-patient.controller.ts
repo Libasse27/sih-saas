@@ -1,7 +1,7 @@
 import { Body, Controller, ForbiddenException, Get, Headers, Param, ParseUUIDPipe, Post, RawBodyRequest, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { Public } from '../../../shared/decorators/public.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';

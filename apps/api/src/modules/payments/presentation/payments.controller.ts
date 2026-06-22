@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Headers, Param, Post, RawBodyRequest, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { Public } from '../../../shared/decorators/public.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
 import { PaymentsService } from '../application/payments.service';

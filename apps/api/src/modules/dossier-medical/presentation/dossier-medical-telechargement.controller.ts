@@ -1,6 +1,6 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { Public } from '../../../shared/decorators/public.decorator';
 import { RawResponse } from '../../../shared/decorators/raw-response.decorator';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
