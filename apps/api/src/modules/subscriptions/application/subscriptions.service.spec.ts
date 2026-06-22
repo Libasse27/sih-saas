@@ -195,6 +195,32 @@ describe('SubscriptionsService', () => {
 
       await expect(service.assertWithinLimit('etab-1', 'maxUtilisateurs')).rejects.toThrow(ForbiddenException);
     });
+
+    /**
+     * `delta` (Phase 33, maxStockageMo) : un upload de plusieurs Mo doit être vérifié comme un AJOUT
+     * à l'usage courant, pas seulement comparé à l'état courant — sinon un fichier de 50 Mo passerait
+     * le contrôle tant que l'usage actuel est strictement inférieur à la limite, même de 1 Mo.
+     */
+    it('avec delta : bloque un upload qui ferait dépasser la limite même si l’usage actuel est sous la limite', async () => {
+      repository.findOne.mockResolvedValue(buildActiveSubscription({ maxStockageMo: 1000 }));
+      etablissementsService.findById.mockResolvedValue({ usage: { utilisateurs: 0, lits: 0, stockageMo: 990 } });
+
+      await expect(service.assertWithinLimit('etab-1', 'maxStockageMo', 50)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('avec delta : autorise un upload qui reste dans la limite', async () => {
+      repository.findOne.mockResolvedValue(buildActiveSubscription({ maxStockageMo: 1000 }));
+      etablissementsService.findById.mockResolvedValue({ usage: { utilisateurs: 0, lits: 0, stockageMo: 900 } });
+
+      await expect(service.assertWithinLimit('etab-1', 'maxStockageMo', 50)).resolves.not.toThrow();
+    });
+
+    it('delta par défaut (1) préserve exactement le comportement historique des compteurs discrets', async () => {
+      repository.findOne.mockResolvedValue(buildActiveSubscription({ maxLits: 10 }));
+      etablissementsService.findById.mockResolvedValue({ usage: { utilisateurs: 0, lits: 9, stockageMo: 0 } });
+
+      await expect(service.assertWithinLimit('etab-1', 'maxLits')).resolves.not.toThrow();
+    });
   });
 
   describe('hasModule', () => {

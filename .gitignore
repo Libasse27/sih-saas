@@ -18,3 +18,4 @@ release/
 **/cypress/screenshots/
 **/cypress/downloads/
 **/cypress/videos/
+apps/api/storage/

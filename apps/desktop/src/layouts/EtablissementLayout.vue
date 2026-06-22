@@ -163,6 +163,7 @@ async function seDeconnecter(): Promise<void> {
         <template #message>
           Forfait <strong>{{ abonnement.planSnapshot.nom }}</strong>
           — <a-tag :color="STATUT_COULEUR[abonnement.statut]">{{ abonnement.statut }}</a-tag>
+          <a-tag v-if="abonnement.planSnapshot.features.supportPrioritaire" color="gold">Support prioritaire</a-tag>
           — expire le {{ new Date(abonnement.dateFin).toLocaleDateString('fr-SN') }}
           <a-tooltip title="Renouvellement en ligne — bientôt disponible">
             <a-button size="small" disabled style="margin-left: 12px">Renouveler</a-button>

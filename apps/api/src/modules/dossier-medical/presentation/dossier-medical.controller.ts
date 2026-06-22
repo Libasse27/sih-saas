@@ -1,5 +1,19 @@
-import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -10,7 +24,13 @@ import { PatientsService } from '../../patients/application/patients.service';
 import { DossierMedicalService } from '../application/dossier-medical.service';
 import { AjouterCompteRenduDto } from './dto/ajouter-compte-rendu.dto';
 import { AjouterObservationDto } from './dto/ajouter-observation.dto';
+import { CreateConsultationDietetiqueDto } from './dto/create-consultation-dietetique.dto';
+import { CreateSeanceReadaptationDto } from './dto/create-seance-readaptation.dto';
 import { UpdateAntecedentsDto } from './dto/update-antecedents.dto';
+
+/** Cap mémoire fixe indépendant du quota de stockage de l'établissement (DME_ATTACHMENTS_MAX_TAILLE_MO) —
+ * évite de bufferiser un corps multipart démesuré avant même que la logique métier ne s'exécute. */
+const TAILLE_MAX_UPLOAD_OCTETS = 25 * 1024 * 1024;
 
 @ApiTags('Dossier médical')
 @ApiBearerAuth()
@@ -97,6 +117,77 @@ export class DossierMedicalController {
       patientId,
       { ...dto, auteurId: currentUser.sub },
       currentUser.etablissementId!,
+    );
+  }
+
+  @Post(':patientId/dossier/seances-readaptation')
+  @Scopes(Scope.ETABLISSEMENT)
+  @RequirePermissions(Permission.DOSSIER_WRITE)
+  @UseGuards(CareContextGuard)
+  @ResponseMessage('Séance de rééducation enregistrée.')
+  ajouterSeanceReadaptation(
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+    @Body() dto: CreateSeanceReadaptationDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.dossierMedicalService.ajouterSeanceReadaptation(
+      patientId,
+      { ...dto, kinesitherapeuteId: currentUser.sub },
+      currentUser.etablissementId!,
+    );
+  }
+
+  @Post(':patientId/dossier/consultations-dietetiques')
+  @Scopes(Scope.ETABLISSEMENT)
+  @RequirePermissions(Permission.DOSSIER_WRITE)
+  @UseGuards(CareContextGuard)
+  @ResponseMessage('Consultation diététique enregistrée.')
+  ajouterConsultationDietetique(
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+    @Body() dto: CreateConsultationDietetiqueDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.dossierMedicalService.ajouterConsultationDietetique(
+      patientId,
+      { ...dto, dieteticienId: currentUser.sub },
+      currentUser.etablissementId!,
+    );
+  }
+
+  @Post(':patientId/dossier/pieces-jointes')
+  @Scopes(Scope.ETABLISSEMENT)
+  @RequirePermissions(Permission.DOSSIER_WRITE)
+  @UseGuards(CareContextGuard)
+  @UseInterceptors(FileInterceptor('fichier', { limits: { fileSize: TAILLE_MAX_UPLOAD_OCTETS } }))
+  @ApiConsumes('multipart/form-data')
+  @ResponseMessage('Pièce jointe ajoutée au dossier.')
+  ajouterPieceJointe(
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+    @UploadedFile() fichier: Express.Multer.File,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    if (!fichier) {
+      throw new BadRequestException('Aucun fichier reçu (champ multipart attendu : "fichier").');
+    }
+
+    return this.dossierMedicalService.ajouterPieceJointe(patientId, currentUser.etablissementId!, currentUser.sub, fichier);
+  }
+
+  @Get(':patientId/dossier/pieces-jointes/:pieceJointeId/lien')
+  @Scopes(Scope.ETABLISSEMENT)
+  @RequirePermissions(Permission.DOSSIER_READ)
+  @UseGuards(CareContextGuard)
+  @ResponseMessage('Lien de téléchargement généré.')
+  genererLienPieceJointe(
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+    @Param('pieceJointeId') pieceJointeId: string,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.dossierMedicalService.genererLienTelechargementPieceJointe(
+      patientId,
+      currentUser.etablissementId!,
+      pieceJointeId,
+      currentUser.sub,
     );
   }
 }

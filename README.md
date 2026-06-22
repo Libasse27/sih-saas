@@ -6,9 +6,9 @@ Monorepo pnpm. Voir `docs/phase-0/` pour le cadrage complet (cartographie, modè
 
 ```
 apps/
-  api/       Backend NestJS (PostgreSQL + MongoDB + Redis)
-  desktop/   Console Electron + Vue (super-admin / établissement) — Phase 9
-  mobile/    App React Native patient — Phase 10
+  api/       Backend NestJS (PostgreSQL + MongoDB + Redis) — voir apps/api/README.md
+  desktop/   Console Electron + Vue (super-admin / établissement) — voir apps/desktop/README.md
+  mobile/    App React Native patient — voir apps/mobile/README.md
 packages/
   shared/    Types et enums partagés (scope, rôles, permissions, contrats API)
 docs/

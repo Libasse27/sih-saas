@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 export default () => ({
   env: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
@@ -75,5 +77,16 @@ export default () => ({
       secretKey: process.env.STRIPE_SECRET_KEY,
       webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     },
+  },
+
+  // Pièces jointes DME (Phase 33) — stockage chiffré local, lien de téléchargement signé/expirant.
+  dmeAttachments: {
+    storageDir: process.env.DME_ATTACHMENTS_DIR ?? path.join(process.cwd(), 'storage', 'dme-attachments'),
+    // Clé AES-256-GCM en hex (64 caractères = 32 octets). Valeur de dev ci-dessous non sécurisée,
+    // À CHANGER en production (perte = pièces jointes existantes irrécupérables, comme BACKUP_ENCRYPTION_PASSPHRASE).
+    encryptionKey: process.env.DME_ATTACHMENTS_ENCRYPTION_KEY ?? '00'.repeat(32),
+    linkSecret: process.env.DME_ATTACHMENTS_LINK_SECRET ?? 'change-me-dme-link-secret-dev-only',
+    linkTtlMinutes: parseInt(process.env.DME_ATTACHMENTS_LINK_TTL_MINUTES ?? '15', 10),
+    maxTailleMo: parseInt(process.env.DME_ATTACHMENTS_MAX_TAILLE_MO ?? '10', 10),
   },
 });

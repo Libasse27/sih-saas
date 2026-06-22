@@ -188,8 +188,15 @@ export class SubscriptionsService {
     return saved;
   }
 
-  /** Lit le planSnapshot — jamais le catalogue `plans` directement (grandfathering, prompt maître §8). */
-  async assertWithinLimit(etablissementId: string, champ: keyof PlanLimites): Promise<void> {
+  /**
+   * Lit le planSnapshot — jamais le catalogue `plans` directement (grandfathering, prompt maître §8).
+   * `delta` = quantité que l'appelant s'apprête à ajouter (1 pour un compteur discret comme
+   * maxUtilisateurs/maxLits — valeur par défaut, comportement inchangé ; la taille en Mo pour
+   * maxStockageMo, où `usageActuel >= limite` seul ne suffit pas : un upload de plusieurs Mo pourrait
+   * dépasser largement la limite tout en passant le contrôle si on ne vérifie pas l'AJOUT, pas
+   * seulement l'état courant).
+   */
+  async assertWithinLimit(etablissementId: string, champ: keyof PlanLimites, delta = 1): Promise<void> {
     const subscription = await this.getActiveForEtablissement(etablissementId);
     if (!subscription) {
       throw new ForbiddenException("Aucun abonnement actif pour cet établissement.");
@@ -203,7 +210,7 @@ export class SubscriptionsService {
     const etablissement = await this.etablissementsService.findById(etablissementId);
     const usageActuel = etablissement.usage[LIMITE_VERS_USAGE[champ]];
 
-    if (usageActuel >= limite) {
+    if (usageActuel + delta > limite) {
       throw new ForbiddenException(
         `Limite du forfait atteinte (${champ} : ${usageActuel}/${limite}). Mettez à niveau votre abonnement.`,
       );
