@@ -24,7 +24,9 @@ describe('LitsService', () => {
       getEtablissementId: jest.fn().mockReturnValue('etab-1'),
       afterCommit: jest.fn((cb) => cb()),
     };
-    chambresService = { findById: jest.fn().mockResolvedValue({ id: 'chambre-1', serviceId: 'service-1' }) };
+    chambresService = {
+      findById: jest.fn().mockResolvedValue({ id: 'chambre-1', serviceId: 'service-1', siteId: 'site-1' }),
+    };
     subscriptionsService = { assertWithinLimit: jest.fn().mockResolvedValue(undefined) };
     etablissementsService = { incrementUsage: jest.fn().mockResolvedValue(undefined) };
     auditService = { log: jest.fn() };
@@ -47,9 +49,10 @@ describe('LitsService', () => {
     expect(etablissementsService.incrementUsage).toHaveBeenCalledWith('etab-1', 'lits', 1);
   });
 
-  it('create() dénormalise le serviceId depuis la chambre', async () => {
+  it('create() dénormalise le serviceId et le siteId depuis la chambre', async () => {
     const lit = await service.create({ chambreId: 'chambre-1', numero: '101' }, 'user-1');
     expect(lit.serviceId).toBe('service-1');
+    expect(lit.siteId).toBe('site-1');
   });
 
   it('assigner() refuse un lit qui n’est pas LIBRE', async () => {

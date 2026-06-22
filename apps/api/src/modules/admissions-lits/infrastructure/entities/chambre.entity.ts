@@ -4,6 +4,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGener
 @Index(['etablissementId'])
 @Index(['etablissementId', 'serviceId'])
 @Index(['etablissementId', 'serviceId', 'numero'], { unique: true })
+@Index(['etablissementId', 'siteId'])
 export class ChambreEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -13,6 +14,10 @@ export class ChambreEntity {
 
   @Column({ type: 'uuid' })
   serviceId: string;
+
+  /** Dénormalisé depuis `ServiceEntity.siteId` à la création — même convention que `LitEntity.serviceId`. */
+  @Column({ type: 'uuid' })
+  siteId: string;
 
   @Column()
   numero: string;

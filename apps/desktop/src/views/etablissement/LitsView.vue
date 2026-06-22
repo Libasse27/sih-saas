@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { LitStatut, Permission } from '@sih-saas/shared';
 import { message } from 'ant-design-vue';
-import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import * as admissionsLitsService from '../../services/admissions-lits.service';
-import type { Chambre, Lit, ServiceClinique } from '../../services/admissions-lits.service';
+import type { Chambre, Lit, ServiceClinique, Site } from '../../services/admissions-lits.service';
 import { obtenirSocket } from '../../services/realtime';
 import { useAuthStore } from '../../stores/auth.store';
 
@@ -30,7 +30,14 @@ const COULEUR_STATUT: Record<LitStatut, string> = {
 const lits = ref<Lit[]>([]);
 const chambres = ref<Chambre[]>([]);
 const services = ref<ServiceClinique[]>([]);
+const sites = ref<Site[]>([]);
 const chargementTableau = ref(false);
+const filtreSiteId = ref<string | undefined>(undefined);
+
+const litsAffiches = computed(() => {
+  if (!filtreSiteId.value) return lits.value;
+  return lits.value.filter((lit) => lit.siteId === filtreSiteId.value);
+});
 
 function nomChambre(chambreId: string): string {
   const chambre = chambres.value.find((c) => c.id === chambreId);
@@ -41,6 +48,10 @@ function nomServiceParId(serviceId: string): string {
   return services.value.find((s) => s.id === serviceId)?.nom ?? '—';
 }
 
+function nomSiteParId(siteId: string): string {
+  return sites.value.find((s) => s.id === siteId)?.nom ?? '—';
+}
+
 function rendreServiceDeChambre({ record }: { record: Chambre }): string {
   return nomServiceParId(record.serviceId);
 }
@@ -49,17 +60,27 @@ function rendreChambreDeLit({ record }: { record: Lit }): string {
   return nomChambre(record.chambreId);
 }
 
+function rendreSiteDeService({ record }: { record: ServiceClinique }): string {
+  return nomSiteParId(record.siteId);
+}
+
+function rendreSiteDeChambre({ record }: { record: Chambre }): string {
+  return nomSiteParId(record.siteId);
+}
+
 async function chargerTableau(): Promise<void> {
   chargementTableau.value = true;
   try {
-    const [resultatLits, resultatChambres, resultatServices] = await Promise.all([
+    const [resultatLits, resultatChambres, resultatServices, resultatSites] = await Promise.all([
       admissionsLitsService.findLits(1, 100),
       admissionsLitsService.findChambres(1, 100),
       admissionsLitsService.findServices(1, 100),
+      admissionsLitsService.findSites(1, 100),
     ]);
     lits.value = resultatLits.items;
     chambres.value = resultatChambres.items;
     services.value = resultatServices.items;
+    sites.value = resultatSites.items;
   } finally {
     chargementTableau.value = false;
   }
@@ -83,9 +104,13 @@ async function changerStatutLit(lit: Lit, statut: LitStatut): Promise<void> {
 }
 
 // --- Configuration ---
+const modalSiteOuvert = ref(false);
+const enregistrementSite = ref(false);
+const formulaireSite = reactive({ nom: '', code: '', adresse: '', ville: '', telephone: '' });
+
 const modalServiceOuvert = ref(false);
 const enregistrementService = ref(false);
-const formulaireService = reactive({ nom: '', code: '' });
+const formulaireService = reactive({ siteId: undefined as string | undefined, nom: '', code: '' });
 
 const modalChambreOuvert = ref(false);
 const enregistrementChambre = ref(false);
@@ -95,16 +120,49 @@ const modalLitOuvert = ref(false);
 const enregistrementLit = ref(false);
 const formulaireLit = reactive({ chambreId: undefined as string | undefined, numero: '' });
 
+function ouvrirCreationSite(): void {
+  formulaireSite.nom = '';
+  formulaireSite.code = '';
+  formulaireSite.adresse = '';
+  formulaireSite.ville = '';
+  formulaireSite.telephone = '';
+  modalSiteOuvert.value = true;
+}
+
+async function soumettreSite(): Promise<void> {
+  enregistrementSite.value = true;
+  try {
+    await admissionsLitsService.createSite({
+      nom: formulaireSite.nom,
+      code: formulaireSite.code,
+      adresse: formulaireSite.adresse || undefined,
+      ville: formulaireSite.ville || undefined,
+      telephone: formulaireSite.telephone || undefined,
+    });
+    message.success('Site créé.');
+    modalSiteOuvert.value = false;
+    await chargerTableau();
+  } finally {
+    enregistrementSite.value = false;
+  }
+}
+
 function ouvrirCreationService(): void {
+  formulaireService.siteId = sites.value.length === 1 ? sites.value[0].id : undefined;
   formulaireService.nom = '';
   formulaireService.code = '';
   modalServiceOuvert.value = true;
 }
 
 async function soumettreService(): Promise<void> {
+  if (!formulaireService.siteId) return;
   enregistrementService.value = true;
   try {
-    await admissionsLitsService.createService({ nom: formulaireService.nom, code: formulaireService.code });
+    await admissionsLitsService.createService({
+      siteId: formulaireService.siteId,
+      nom: formulaireService.nom,
+      code: formulaireService.code,
+    });
     message.success('Service créé.');
     modalServiceOuvert.value = false;
     await chargerTableau();
@@ -167,11 +225,21 @@ onUnmounted(() => {
 
     <a-tabs>
       <a-tab-pane key="tableau" tab="Tableau des lits">
+        <a-select
+          v-if="sites.length > 1"
+          v-model:value="filtreSiteId"
+          placeholder="Filtrer par site"
+          style="width: 220px; margin-bottom: 16px"
+          allow-clear
+        >
+          <a-select-option v-for="site in sites" :key="site.id" :value="site.id">{{ site.nom }}</a-select-option>
+        </a-select>
         <a-spin :spinning="chargementTableau">
           <a-row :gutter="16">
-            <a-col v-for="lit in lits" :key="lit.id" :span="6" style="margin-bottom: 16px">
+            <a-col v-for="lit in litsAffiches" :key="lit.id" :span="6" style="margin-bottom: 16px">
               <a-card size="small" :title="`Lit ${lit.numero}`">
                 <p>{{ nomServiceParId(lit.serviceId) }} — {{ nomChambre(lit.chambreId) }}</p>
+                <p v-if="sites.length > 1" style="color: #888; font-size: 12px">{{ nomSiteParId(lit.siteId) }}</p>
                 <a-tag :color="COULEUR_STATUT[lit.statut]">{{ LIBELLE_STATUT[lit.statut] }}</a-tag>
                 <div style="margin-top: 8px">
                   <a-space>
@@ -194,19 +262,33 @@ onUnmounted(() => {
               </a-card>
             </a-col>
           </a-row>
-          <a-empty v-if="!chargementTableau && lits.length === 0" description="Aucun lit configuré." />
+          <a-empty v-if="!chargementTableau && litsAffiches.length === 0" description="Aucun lit configuré." />
         </a-spin>
       </a-tab-pane>
 
       <a-tab-pane v-if="peutConfigurer" key="configuration" tab="Configuration">
+        <a-card title="Sites" style="margin-bottom: 16px">
+          <template #extra><a-button size="small" @click="ouvrirCreationSite">Nouveau site</a-button></template>
+          <a-table :data-source="sites" row-key="id" :pagination="false" size="small">
+            <a-table-column title="Nom" data-index="nom" />
+            <a-table-column title="Code" data-index="code" />
+            <a-table-column title="Ville" data-index="ville" />
+          </a-table>
+        </a-card>
+
         <a-card title="Services" style="margin-bottom: 16px">
           <template #extra><a-button size="small" @click="ouvrirCreationService">Nouveau service</a-button></template>
-          <a-table :data-source="services" :columns="[{ title: 'Nom', dataIndex: 'nom' }, { title: 'Code', dataIndex: 'code' }]" row-key="id" :pagination="false" size="small" />
+          <a-table :data-source="services" row-key="id" :pagination="false" size="small">
+            <a-table-column v-if="sites.length > 1" title="Site" :customRender="rendreSiteDeService" />
+            <a-table-column title="Nom" data-index="nom" />
+            <a-table-column title="Code" data-index="code" />
+          </a-table>
         </a-card>
 
         <a-card title="Chambres" style="margin-bottom: 16px">
           <template #extra><a-button size="small" @click="ouvrirCreationChambre">Nouvelle chambre</a-button></template>
           <a-table :data-source="chambres" row-key="id" :pagination="false" size="small">
+            <a-table-column v-if="sites.length > 1" title="Site" :customRender="rendreSiteDeChambre" />
             <a-table-column title="Service" :customRender="rendreServiceDeChambre" />
             <a-table-column title="Numéro" data-index="numero" />
           </a-table>
@@ -222,8 +304,23 @@ onUnmounted(() => {
       </a-tab-pane>
     </a-tabs>
 
+    <a-modal v-model:open="modalSiteOuvert" title="Nouveau site" :confirm-loading="enregistrementSite" @ok="soumettreSite">
+      <a-form layout="vertical">
+        <a-form-item label="Nom"><a-input v-model:value="formulaireSite.nom" /></a-form-item>
+        <a-form-item label="Code"><a-input v-model:value="formulaireSite.code" /></a-form-item>
+        <a-form-item label="Adresse"><a-input v-model:value="formulaireSite.adresse" /></a-form-item>
+        <a-form-item label="Ville"><a-input v-model:value="formulaireSite.ville" /></a-form-item>
+        <a-form-item label="Téléphone"><a-input v-model:value="formulaireSite.telephone" /></a-form-item>
+      </a-form>
+    </a-modal>
+
     <a-modal v-model:open="modalServiceOuvert" title="Nouveau service" :confirm-loading="enregistrementService" @ok="soumettreService">
       <a-form layout="vertical">
+        <a-form-item v-if="sites.length > 1" label="Site">
+          <a-select v-model:value="formulaireService.siteId">
+            <a-select-option v-for="site in sites" :key="site.id" :value="site.id">{{ site.nom }}</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item label="Nom"><a-input v-model:value="formulaireService.nom" /></a-form-item>
         <a-form-item label="Code"><a-input v-model:value="formulaireService.code" /></a-form-item>
       </a-form>

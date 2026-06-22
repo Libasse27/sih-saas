@@ -16,6 +16,10 @@ class FindChambresQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   serviceId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  siteId?: string;
 }
 
 @ApiTags('Chambres (admissions/lits)')
@@ -38,7 +42,7 @@ export class ChambresController {
   @RequirePermissions(Permission.LIT_VIEW)
   @ResponseMessage('Liste des chambres.')
   findAll(@Query() query: FindChambresQueryDto) {
-    return this.chambresService.findAll(query.page, query.limit, query.serviceId);
+    return this.chambresService.findAll(query.page, query.limit, { serviceId: query.serviceId, siteId: query.siteId });
   }
 
   @Get(':id')

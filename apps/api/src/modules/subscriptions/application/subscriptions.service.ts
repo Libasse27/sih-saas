@@ -217,6 +217,29 @@ export class SubscriptionsService {
     }
   }
 
+  /**
+   * Garde Phase 34 (`Plan.features.multiSites`, prompt maître §8) — symétrique à
+   * `assertWithinLimit` mais pour une feature booléenne plutôt qu'une limite numérique : le compte
+   * de sites actuels est calculé par l'appelant (`SitesService.create()`) plutôt que recompté ici,
+   * pour éviter une dépendance circulaire `SubscriptionsModule ↔ AdmissionsLitsModule`.
+   */
+  async assertMultiSitesAutorise(etablissementId: string, sitesActuels: number): Promise<void> {
+    const subscription = await this.getActiveForEtablissement(etablissementId);
+    if (!subscription) {
+      throw new ForbiddenException("Aucun abonnement actif pour cet établissement.");
+    }
+
+    if (subscription.planSnapshot.features.multiSites) {
+      return;
+    }
+
+    if (sitesActuels >= 1) {
+      throw new ForbiddenException(
+        "Votre forfait ne permet qu'un seul site. Passez à un forfait supérieur pour activer le multi-sites.",
+      );
+    }
+  }
+
   /** requirePlanFeature() — voir domain/plan-feature.guard.ts. */
   async hasModule(etablissementId: string, module: ClinicalModule): Promise<boolean> {
     const subscription = await this.getActiveForEtablissement(etablissementId);

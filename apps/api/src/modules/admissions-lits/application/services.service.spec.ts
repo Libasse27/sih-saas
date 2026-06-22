@@ -4,6 +4,7 @@ import { ServicesService } from './services.service';
 describe('ServicesService', () => {
   let repository: { create: jest.Mock; save: jest.Mock; findOne: jest.Mock; findAndCount: jest.Mock };
   let tenantContext: { getManager: jest.Mock; getEtablissementId: jest.Mock };
+  let sitesService: { findById: jest.Mock };
   let auditService: { log: jest.Mock };
   let service: ServicesService;
 
@@ -18,17 +19,28 @@ describe('ServicesService', () => {
       getManager: jest.fn(() => ({ getRepository: () => repository })),
       getEtablissementId: jest.fn().mockReturnValue('etab-1'),
     };
+    sitesService = { findById: jest.fn().mockResolvedValue({ id: 'site-1', etablissementId: 'etab-1' }) };
     auditService = { log: jest.fn() };
 
-    service = new ServicesService(tenantContext as any, auditService as any);
+    service = new ServicesService(tenantContext as any, sitesService as any, auditService as any);
   });
 
   it('crée un service rattaché au tenant courant et journalise', async () => {
-    const created = await service.create({ nom: 'Urgences', code: 'URG' }, 'user-1');
+    const created = await service.create({ siteId: 'site-1', nom: 'Urgences', code: 'URG' }, 'user-1');
 
     expect(created.etablissementId).toBe('etab-1');
+    expect(created.siteId).toBe('site-1');
+    expect(sitesService.findById).toHaveBeenCalledWith('site-1');
     expect(auditService.log).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'service.create', etablissementId: 'etab-1', userId: 'user-1' }),
+    );
+  });
+
+  it('create() propage le NotFoundException si le site est introuvable (RLS-scopé)', async () => {
+    sitesService.findById.mockRejectedValue(new NotFoundException('Site introuvable.'));
+
+    await expect(service.create({ siteId: 'site-autre-tenant', nom: 'Urgences', code: 'URG' }, 'user-1')).rejects.toThrow(
+      NotFoundException,
     );
   });
 

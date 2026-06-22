@@ -1,11 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
-export class CreateServiceDto {
-  @ApiProperty()
-  @IsUUID()
-  siteId: string;
-
+export class CreateSiteDto {
   @ApiProperty()
   @IsString()
   nom: string;
@@ -17,10 +13,15 @@ export class CreateServiceDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  type?: string;
+  adresse?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
-  responsableId?: string;
+  @IsString()
+  ville?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  telephone?: string;
 }

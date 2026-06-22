@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Periodicite } from '@sih-saas/shared';
 import { ServicesService } from '../../admissions-lits/application/services.service';
+import { SitesService } from '../../admissions-lits/application/sites.service';
 import { AuditService } from '../../audit/application/audit.service';
 import { EtablissementsService } from '../../etablissements/application/etablissements.service';
 import { MailService } from '../../mail/application/mail.service';
@@ -19,11 +20,13 @@ const SERVICES_PAR_DEFAUT: ReadonlyArray<{ nom: string; code: string; type: stri
 /**
  * Provisionnement post-paiement (ou immédiat si essai gratuit) — prompt maître §11.
  *
- * Services/départements par défaut ajoutés en Phase 32 (gap audit). Toujours volontairement
- * absents : numérotation des dossiers/factures (déjà gérée à la demande par
- * `EtablissementsService.incrementerCompteur`, pas besoin de seed), structure de LITS (le prompt
- * maître §11 dit explicitement "structure de lits vide à compléter" — contrairement aux services,
- * ce n'est PAS un oubli, juste un choix de scope différent).
+ * Services/départements par défaut ajoutés en Phase 32 (gap audit). Site « Site principal » créé en
+ * Phase 34 (`multiSites`) juste avant ces services — un établissement a toujours au moins un site,
+ * que son forfait inclue `multiSites` ou non. Toujours volontairement absents : numérotation des
+ * dossiers/factures (déjà gérée à la demande par `EtablissementsService.incrementerCompteur`, pas
+ * besoin de seed), structure de LITS (le prompt maître §11 dit explicitement "structure de lits
+ * vide à compléter" — contrairement aux services/sites, ce n'est PAS un oubli, juste un choix de
+ * scope différent).
  */
 @Injectable()
 export class ProvisioningService {
@@ -36,6 +39,7 @@ export class ProvisioningService {
     private readonly mailService: MailService,
     private readonly auditService: AuditService,
     private readonly servicesService: ServicesService,
+    private readonly sitesService: SitesService,
     private readonly tenantContext: TenantContextService,
   ) {}
 
@@ -65,18 +69,19 @@ export class ProvisioningService {
     }
 
     try {
-      // ServicesService passe par tenantContext.getManager() (RLS) — aucun contexte tenant n'est
-      // normalement ouvert ici (appelé depuis des routes @Public(), register/webhook), d'où
-      // runForEtablissement() qui ouvre sa propre transaction RLS pour la durée de cette boucle.
+      // ServicesService/SitesService passent par tenantContext.getManager() (RLS) — aucun contexte
+      // tenant n'est normalement ouvert ici (appelé depuis des routes @Public(), register/webhook),
+      // d'où runForEtablissement() qui ouvre sa propre transaction RLS pour la durée de cette boucle.
       await this.tenantContext.runForEtablissement(etablissementId, async () => {
+        const sitePrincipal = await this.sitesService.create({ nom: 'Site principal', code: 'PRINCIPAL' }, actingUserId);
         for (const service of SERVICES_PAR_DEFAUT) {
-          await this.servicesService.create(service, actingUserId);
+          await this.servicesService.create({ ...service, siteId: sitePrincipal.id }, actingUserId);
         }
       });
     } catch (error) {
-      // Comme l'email : un échec ici ne doit jamais invalider l'abonnement déjà créé — les services
-      // restent créables manuellement ensuite via POST /services.
-      this.logger.warn(`Échec de la création des services par défaut pour ${etablissement.nom} : ${(error as Error).message}`);
+      // Comme l'email : un échec ici ne doit jamais invalider l'abonnement déjà créé — le site et les
+      // services restent créables manuellement ensuite via POST /sites et POST /services.
+      this.logger.warn(`Échec de la création du site/services par défaut pour ${etablissement.nom} : ${(error as Error).message}`);
     }
 
     await this.auditService.log({

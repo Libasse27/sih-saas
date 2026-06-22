@@ -2,8 +2,26 @@ import type { ApiResponse, AdmissionStatut, LitStatut } from '@sih-saas/shared';
 import type { Paginated } from '../types/api';
 import { api } from './api';
 
+export interface Site {
+  id: string;
+  nom: string;
+  code: string;
+  adresse: string | null;
+  ville: string | null;
+  telephone: string | null;
+}
+
+export interface CreateSiteDto {
+  nom: string;
+  code: string;
+  adresse?: string;
+  ville?: string;
+  telephone?: string;
+}
+
 export interface ServiceClinique {
   id: string;
+  siteId: string;
   nom: string;
   code: string;
   type: string | null;
@@ -11,6 +29,7 @@ export interface ServiceClinique {
 }
 
 export interface CreateServiceDto {
+  siteId: string;
   nom: string;
   code: string;
   type?: string;
@@ -20,6 +39,7 @@ export interface CreateServiceDto {
 export interface Chambre {
   id: string;
   serviceId: string;
+  siteId: string;
   numero: string;
   type: string | null;
 }
@@ -34,6 +54,7 @@ export interface Lit {
   id: string;
   chambreId: string;
   serviceId: string;
+  siteId: string;
   numero: string;
   statut: LitStatut;
   patientActuelId: string | null;
@@ -66,6 +87,22 @@ export interface CreateAdmissionDto {
   dateSortiePrevue?: string;
 }
 
+// --- Sites ---
+export async function findSites(page: number, limit: number): Promise<Paginated<Site>> {
+  const response = await api.get<ApiResponse<Paginated<Site>>>('/sites', { params: { page, limit } });
+  return response.data.data;
+}
+
+export async function createSite(dto: CreateSiteDto): Promise<Site> {
+  const response = await api.post<ApiResponse<Site>>('/sites', dto);
+  return response.data.data;
+}
+
+export async function updateSite(id: string, dto: Partial<CreateSiteDto>): Promise<Site> {
+  const response = await api.patch<ApiResponse<Site>>(`/sites/${id}`, dto);
+  return response.data.data;
+}
+
 // --- Services ---
 export async function findServices(page: number, limit: number): Promise<Paginated<ServiceClinique>> {
   const response = await api.get<ApiResponse<Paginated<ServiceClinique>>>('/services', { params: { page, limit } });
@@ -89,7 +126,11 @@ export async function createChambre(dto: CreateChambreDto): Promise<Chambre> {
 }
 
 // --- Lits ---
-export async function findLits(page: number, limit: number, filtres: { serviceId?: string; statut?: LitStatut } = {}): Promise<Paginated<Lit>> {
+export async function findLits(
+  page: number,
+  limit: number,
+  filtres: { serviceId?: string; siteId?: string; statut?: LitStatut } = {},
+): Promise<Paginated<Lit>> {
   const response = await api.get<ApiResponse<Paginated<Lit>>>('/lits', { params: { page, limit, ...filtres } });
   return response.data.data;
 }

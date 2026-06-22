@@ -12,7 +12,7 @@ RBAC à permissions granulaires, appliqué **côté API** (guards NestJS) et ré
 | Administration établissement | `utilisateur:manage`, `etablissement:settings`, `abonnement-etablissement:view`, `abonnement-etablissement:renew`, `audit:read:local` |
 | Patient & dossier | `patient:create`, `patient:read`, `dossier:read` 🩺, `dossier:write` 🩺 |
 | RDV / Consultation | `rdv:create`, `rdv:manage`, `consultation:create` 🩺 |
-| Admission / Lits | `admission:create`, `lit:view`, `lit:assign`, `lit:liberer` |
+| Admission / Lits / Sites | `admission:create`, `lit:view`, `lit:assign`, `lit:liberer` (Phase 34 : la gestion des `Site`s — succursales d'un établissement — réutilise `etablissement:settings` en écriture et `lit:view` en lecture, aucune permission `site:manage` créée) |
 | Prescription | `prescription:create` 🩺, `prescription:validate` 🩺 |
 | Pharmacie / Stock | `dispensation:create`, `stock:view`, `stock:manage` |
 | Administration médicament | `administration:create` 🩺 |

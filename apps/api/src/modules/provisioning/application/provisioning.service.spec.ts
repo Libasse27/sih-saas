@@ -8,6 +8,7 @@ describe('ProvisioningService', () => {
   let mailService: { envoyerBienvenue: jest.Mock };
   let auditService: { log: jest.Mock };
   let servicesService: { create: jest.Mock };
+  let sitesService: { create: jest.Mock };
   let tenantContext: { runForEtablissement: jest.Mock };
   let service: ProvisioningService;
 
@@ -20,6 +21,7 @@ describe('ProvisioningService', () => {
     mailService = { envoyerBienvenue: jest.fn() };
     auditService = { log: jest.fn() };
     servicesService = { create: jest.fn().mockResolvedValue({ id: 'service-1' }) };
+    sitesService = { create: jest.fn().mockResolvedValue({ id: 'site-1' }) };
     tenantContext = { runForEtablissement: jest.fn((_id: string, callback: () => Promise<unknown>) => callback()) };
 
     service = new ProvisioningService(
@@ -29,6 +31,7 @@ describe('ProvisioningService', () => {
       mailService as any,
       auditService as any,
       servicesService as any,
+      sitesService as any,
       tenantContext as any,
     );
   });
@@ -47,10 +50,20 @@ describe('ProvisioningService', () => {
     );
     expect(subscription.id).toBe('sub-1');
     expect(tenantContext.runForEtablissement).toHaveBeenCalledWith('etab-1', expect.any(Function));
+    expect(sitesService.create).toHaveBeenCalledWith({ nom: 'Site principal', code: 'PRINCIPAL' }, 'admin-1');
     expect(servicesService.create).toHaveBeenCalledTimes(3);
-    expect(servicesService.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'CONSULT' }), 'admin-1');
-    expect(servicesService.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'HOSPIT' }), 'admin-1');
-    expect(servicesService.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'URGENCES' }), 'admin-1');
+    expect(servicesService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'CONSULT', siteId: 'site-1' }),
+      'admin-1',
+    );
+    expect(servicesService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'HOSPIT', siteId: 'site-1' }),
+      'admin-1',
+    );
+    expect(servicesService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'URGENCES', siteId: 'site-1' }),
+      'admin-1',
+    );
   });
 
   it("n'échoue pas si l'envoi de l'email de bienvenue échoue", async () => {

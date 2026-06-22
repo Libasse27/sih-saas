@@ -42,6 +42,7 @@ export class LitsService {
         etablissementId,
         chambreId: chambre.id,
         serviceId: chambre.serviceId,
+        siteId: chambre.siteId,
         numero: dto.numero,
         statut: LitStatut.LIBRE,
       }),
@@ -62,7 +63,7 @@ export class LitsService {
   async findAll(
     page: number,
     limit: number,
-    filtres: { serviceId?: string; statut?: LitStatut } = {},
+    filtres: { serviceId?: string; siteId?: string; statut?: LitStatut } = {},
   ): Promise<PaginatedResult<LitEntity>> {
     const [items, total] = await this.repository.findAndCount({
       where: filtres,

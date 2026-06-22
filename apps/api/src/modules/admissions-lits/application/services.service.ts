@@ -6,12 +6,14 @@ import { ServiceEntity } from '../infrastructure/entities/service.entity';
 import { CreateServiceDto } from '../presentation/dto/create-service.dto';
 import { UpdateServiceDto } from '../presentation/dto/update-service.dto';
 import { PaginatedResult } from './paginated-result';
+import { SitesService } from './sites.service';
 
 /** `clinic.services` est protégée par RLS — voir patients.service.ts pour la convention tenantContext.getManager(). */
 @Injectable()
 export class ServicesService {
   constructor(
     private readonly tenantContext: TenantContextService,
+    private readonly sitesService: SitesService,
     private readonly auditService: AuditService,
   ) {}
 
@@ -21,8 +23,10 @@ export class ServicesService {
 
   async create(dto: CreateServiceDto, actingUserId: string): Promise<ServiceEntity> {
     const etablissementId = this.tenantContext.getEtablissementId()!;
+    // findById est RLS-scopé : lève NotFoundException si le site n'appartient pas au tenant courant.
+    const site = await this.sitesService.findById(dto.siteId);
     const service = await this.repository.save(
-      this.repository.create({ ...dto, etablissementId, responsableId: dto.responsableId ?? null }),
+      this.repository.create({ ...dto, etablissementId, siteId: site.id, responsableId: dto.responsableId ?? null }),
     );
 
     await this.auditService.log({
@@ -36,8 +40,9 @@ export class ServicesService {
     return service;
   }
 
-  async findAll(page: number, limit: number): Promise<PaginatedResult<ServiceEntity>> {
+  async findAll(page: number, limit: number, siteId?: string): Promise<PaginatedResult<ServiceEntity>> {
     const [items, total] = await this.repository.findAndCount({
+      where: siteId ? { siteId } : {},
       skip: (page - 1) * limit,
       take: limit,
       order: { nom: 'ASC' },

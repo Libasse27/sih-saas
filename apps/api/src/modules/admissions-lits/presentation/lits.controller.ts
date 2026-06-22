@@ -19,6 +19,10 @@ class FindLitsQueryDto extends PaginationQueryDto {
   serviceId?: string;
 
   @IsOptional()
+  @IsUUID()
+  siteId?: string;
+
+  @IsOptional()
   @IsEnum(LitStatut)
   statut?: LitStatut;
 }
@@ -43,7 +47,11 @@ export class LitsController {
   @RequirePermissions(Permission.LIT_VIEW)
   @ResponseMessage('Liste des lits.')
   findAll(@Query() query: FindLitsQueryDto) {
-    return this.litsService.findAll(query.page, query.limit, { serviceId: query.serviceId, statut: query.statut });
+    return this.litsService.findAll(query.page, query.limit, {
+      serviceId: query.serviceId,
+      siteId: query.siteId,
+      statut: query.statut,
+    });
   }
 
   @Get(':id')

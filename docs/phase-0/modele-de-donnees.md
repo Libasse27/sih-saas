@@ -109,9 +109,10 @@ Toutes les tables ci-dessous ont `etablissement_id uuid NOT NULL` + index compos
 | Table | Champs clés |
 |---|---|
 | `patients` | idh (unique par établissement, format `{CODE_ETAB}-{ANNEE}-{SEQUENCE}`, ex. `HMS-2026-000123`), nom, prenom, date_naissance, sexe, telephone (+221), adresse, assurance_id FK nullable, contact_urgence jsonb, consentements jsonb[] `{type, date, valeur}` |
-| `services` | nom, code, type, responsable_id FK users |
-| `chambres` | service_id FK, numero, type |
-| `lits` | chambre_id FK, numero, statut enum(`LIBRE`,`OCCUPE`,`RESERVE`,`MAINTENANCE`), patient_actuel_id FK nullable |
+| `sites` | (Phase 34, `Plan.features.multiSites`) nom, code (unique par établissement), adresse, ville, telephone — site physique/succursale ; un établissement sans `multiSites` dans son forfait actif est plafonné à 1 site (`SubscriptionsService.assertMultiSitesAutorise`) |
+| `services` | site_id FK sites, nom, code, type, responsable_id FK users |
+| `chambres` | service_id FK, site_id FK sites (dénormalisé depuis le service), numero, type |
+| `lits` | chambre_id FK, service_id FK (dénormalisé), site_id FK sites (dénormalisé depuis la chambre), numero, statut enum(`LIBRE`,`OCCUPE`,`RESERVE`,`MAINTENANCE`), patient_actuel_id FK nullable |
 | `admissions` | patient_id FK, lit_id FK, service_id FK, medecin_referent_id FK users, motif, date_admission, date_sortie_prevue, date_sortie_reelle, statut |
 | `mouvements_patient` | patient_id FK, admission_id FK, type enum(`ENTREE`,`TRANSFERT`,`SORTIE`), service/lit origine+destination, date_mouvement, effectue_par FK users |
 | `rendez_vous` | patient_id FK, praticien_id FK users, service_id FK, date_heure, duree_min, motif, statut, canal(`SUR_SITE`,`TELECONSULTATION`) |
@@ -162,8 +163,9 @@ Sépare les pièces jointes volumineuses (DICOM, PDF) du document `dossiers_medi
 Etablissement (1) ── (1) Subscription ── (1) Plan
        │                                    (planSnapshot figé dans Subscription)
        ├── (N) User
+       ├── (N) Site (Phase 34, multiSites)
        ├── (N) Patient ── (1) DossierMedical [Mongo]
-       │        ├── (N) Admission ── (1) Lit ── (1) Chambre ── (1) Service
+       │        ├── (N) Admission ── (1) Lit ── (1) Chambre ── (1) Service ── (1) Site
        │        ├── (N) RendezVous / Consultation
        │        ├── (N) Prescription ── (N) PrescriptionLigne ── (1) Medicament
        │        ├── (N) DemandeAnalyse / DemandeImagerie

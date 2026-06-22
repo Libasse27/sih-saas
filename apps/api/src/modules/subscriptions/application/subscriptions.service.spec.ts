@@ -223,6 +223,41 @@ describe('SubscriptionsService', () => {
     });
   });
 
+  describe('assertMultiSitesAutorise', () => {
+    function buildActiveSubscription(multiSites: boolean): SubscriptionEntity {
+      return {
+        id: 'sub-1',
+        etablissementId: 'etab-1',
+        statut: SubscriptionStatut.ACTIF,
+        planSnapshot: { features: { supportPrioritaire: false, apiAccess: false, multiSites } },
+      } as unknown as SubscriptionEntity;
+    }
+
+    it("bloque si l'établissement n'a aucun abonnement actif", async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(service.assertMultiSitesAutorise('etab-1', 0)).rejects.toThrow(ForbiddenException);
+    });
+
+    it("bloque la création d'un 2e site quand le forfait n'inclut pas multiSites", async () => {
+      repository.findOne.mockResolvedValue(buildActiveSubscription(false));
+
+      await expect(service.assertMultiSitesAutorise('etab-1', 1)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('autorise le 1er site même sans multiSites', async () => {
+      repository.findOne.mockResolvedValue(buildActiveSubscription(false));
+
+      await expect(service.assertMultiSitesAutorise('etab-1', 0)).resolves.not.toThrow();
+    });
+
+    it('autorise un nombre illimité de sites quand le forfait inclut multiSites', async () => {
+      repository.findOne.mockResolvedValue(buildActiveSubscription(true));
+
+      await expect(service.assertMultiSitesAutorise('etab-1', 5)).resolves.not.toThrow();
+    });
+  });
+
   describe('hasModule', () => {
     it('renvoie true si le module fait partie du planSnapshot actif', async () => {
       repository.findOne.mockResolvedValue({

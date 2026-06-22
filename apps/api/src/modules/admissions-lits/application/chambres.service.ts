@@ -5,11 +5,13 @@ import { TenantContextService } from '../../../shared/tenant/tenant-context.serv
 import { ChambreEntity } from '../infrastructure/entities/chambre.entity';
 import { CreateChambreDto } from '../presentation/dto/create-chambre.dto';
 import { PaginatedResult } from './paginated-result';
+import { ServicesService } from './services.service';
 
 @Injectable()
 export class ChambresService {
   constructor(
     private readonly tenantContext: TenantContextService,
+    private readonly servicesService: ServicesService,
     private readonly auditService: AuditService,
   ) {}
 
@@ -19,7 +21,12 @@ export class ChambresService {
 
   async create(dto: CreateChambreDto, actingUserId: string): Promise<ChambreEntity> {
     const etablissementId = this.tenantContext.getEtablissementId()!;
-    const chambre = await this.repository.save(this.repository.create({ ...dto, etablissementId }));
+    // findById est RLS-scopé : lève NotFoundException si le service n'appartient pas au tenant courant
+    // (validation absente avant la Phase 34 — dto.serviceId était accepté sans vérification).
+    const service = await this.servicesService.findById(dto.serviceId);
+    const chambre = await this.repository.save(
+      this.repository.create({ ...dto, etablissementId, siteId: service.siteId }),
+    );
 
     await this.auditService.log({
       etablissementId,
@@ -32,9 +39,13 @@ export class ChambresService {
     return chambre;
   }
 
-  async findAll(page: number, limit: number, serviceId?: string): Promise<PaginatedResult<ChambreEntity>> {
+  async findAll(
+    page: number,
+    limit: number,
+    filtres: { serviceId?: string; siteId?: string } = {},
+  ): Promise<PaginatedResult<ChambreEntity>> {
     const [items, total] = await this.repository.findAndCount({
-      where: serviceId ? { serviceId } : {},
+      where: filtres,
       skip: (page - 1) * limit,
       take: limit,
       order: { numero: 'ASC' },
