@@ -9,3 +9,8 @@
 -- (mécanisme /docker-entrypoint-initdb.d/ de l'image officielle).
 CREATE ROLE sih_saas_app WITH LOGIN PASSWORD 'sih_saas_app_dev_password' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
 GRANT ALL PRIVILEGES ON DATABASE sih_saas TO sih_saas_app;
+
+-- Depuis PostgreSQL 15, le schéma "public" n'accorde plus CREATE à PUBLIC par défaut — un GRANT
+-- au niveau base (ci-dessus) ne couvre pas la création d'objets dans "public" (ex. la table
+-- "migrations" de TypeORM, qui y vit par défaut avant même la première migration applicative).
+GRANT ALL ON SCHEMA public TO sih_saas_app;

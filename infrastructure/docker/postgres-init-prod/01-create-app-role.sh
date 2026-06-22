@@ -13,4 +13,6 @@ fi
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
   CREATE ROLE sih_saas_app WITH LOGIN PASSWORD '${SIH_SAAS_APP_PASSWORD}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
   GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO sih_saas_app;
+  -- Depuis PostgreSQL 15, "public" n'accorde plus CREATE à PUBLIC par défaut (voir 01-create-app-role.sql, dev).
+  GRANT ALL ON SCHEMA public TO sih_saas_app;
 EOSQL

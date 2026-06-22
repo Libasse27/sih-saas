@@ -5,12 +5,18 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import * as admissionsLitsService from '../../services/admissions-lits.service';
 import type { Chambre, Lit, ServiceClinique, Site } from '../../services/admissions-lits.service';
 import { obtenirSocket } from '../../services/realtime';
+import * as subscriptionsService from '../../services/subscriptions.service';
 import { useAuthStore } from '../../stores/auth.store';
 
 const auth = useAuthStore();
 const peutAssigner = auth.aPermission(Permission.LIT_ASSIGN);
 const peutLiberer = auth.aPermission(Permission.LIT_LIBERER);
 const peutConfigurer = auth.aPermission(Permission.ETABLISSEMENT_SETTINGS);
+
+// Reflète côté UI la garde backend `SubscriptionsService.assertMultiSitesAutorise` : sans le
+// feature `multiSites` du forfait, un seul site est autorisé — désactiver le bouton proactivement
+// plutôt que de laisser l'utilisateur essuyer le 403 après avoir rempli le formulaire.
+const multiSitesAutorise = ref(false);
 
 const LIBELLE_STATUT: Record<LitStatut, string> = {
   [LitStatut.LIBRE]: 'Libre',
@@ -38,6 +44,8 @@ const litsAffiches = computed(() => {
   if (!filtreSiteId.value) return lits.value;
   return lits.value.filter((lit) => lit.siteId === filtreSiteId.value);
 });
+
+const peutCreerSite = computed(() => multiSitesAutorise.value || sites.value.length === 0);
 
 function nomChambre(chambreId: string): string {
   const chambre = chambres.value.find((c) => c.id === chambreId);
@@ -212,6 +220,11 @@ async function soumettreLit(): Promise<void> {
 onMounted(() => {
   void chargerTableau();
   obtenirSocket()?.on('lits:updated', onLitMisAJour);
+  if (peutConfigurer) {
+    void subscriptionsService.findMine().then((abonnement) => {
+      multiSitesAutorise.value = abonnement?.planSnapshot.features.multiSites ?? false;
+    });
+  }
 });
 
 onUnmounted(() => {
@@ -268,7 +281,11 @@ onUnmounted(() => {
 
       <a-tab-pane v-if="peutConfigurer" key="configuration" tab="Configuration">
         <a-card title="Sites" style="margin-bottom: 16px">
-          <template #extra><a-button size="small" @click="ouvrirCreationSite">Nouveau site</a-button></template>
+          <template #extra>
+            <a-tooltip :title="!peutCreerSite ? 'Votre forfait ne permet qu\'un seul site. Passez à un forfait supérieur pour activer le multi-sites.' : ''">
+              <a-button size="small" :disabled="!peutCreerSite" @click="ouvrirCreationSite">Nouveau site</a-button>
+            </a-tooltip>
+          </template>
           <a-table :data-source="sites" row-key="id" :pagination="false" size="small">
             <a-table-column title="Nom" data-index="nom" />
             <a-table-column title="Code" data-index="code" />
