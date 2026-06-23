@@ -151,7 +151,7 @@ export class AuthService {
     });
 
     const refreshToken = await this.jwtService.signAsync(
-      { sub: user.id },
+      { sub: user.id, jti: crypto.randomUUID() },
       {
         secret: this.config.get<string>('jwt.refreshSecret'),
         expiresIn: this.config.get<string>('jwt.refreshExpiresIn'),

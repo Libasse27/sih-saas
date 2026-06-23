@@ -31,11 +31,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Lint (api, desktop, mobile, shared)
-        run: pnpm -r run lint
-
+      # Doit précéder le lint : sur un checkout frais, dist/ n'existe pas encore et l'eslint
+      # resolver d'apps/mobile (import/no-unresolved) ne sait résoudre @sih-saas/shared que contre
+      # ses fichiers compilés, pas contre les sources — ce qui passait toujours en local seulement
+      # parce que packages/shared/dist y existe déjà depuis de nombreuses sessions précédentes.
       - name: Build packages/shared
         run: pnpm --filter @sih-saas/shared build
+
+      - name: Lint (api, desktop, mobile, shared)
+        run: pnpm -r run lint
 
       - name: Build API
         run: pnpm --filter @sih-saas/api build
