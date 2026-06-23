@@ -61,7 +61,9 @@ describe('Dispensation pharmacie', () => {
                                 lignes: [{ medicamentId, posologie: '1 comprimé matin et soir', duree: '5 jours', voie: 'orale' }],
                               },
                             }).then((reponsePrescription) => {
-                              const prescriptionId = reponsePrescription.body.data.id as string;
+                              // PrescriptionsService.create() renvoie { prescription, lignes } (PrescriptionAvecLignes),
+                              // jamais l'entité à plat — contrairement à findOne() qui spread ses champs au niveau racine.
+                              const prescriptionId = reponsePrescription.body.data.prescription.id as string;
 
                               cy.request({
                                 method: 'PATCH',
