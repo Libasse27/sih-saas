@@ -25,8 +25,11 @@ describe('Prise de rendez-vous (console établissement)', () => {
                 cy.url().should('include', '/etablissement/rendez-vous');
 
                 cy.get('[data-cy=rdv-nouveau]').click();
-                cy.get('[data-cy=rdv-recherche-idh]').type(patient.idh);
-                cy.get('[data-cy=rdv-recherche-idh]').find('.ant-input-search-button').click();
+                // `data-cy` sur <a-input-search> retombe sur l'élément <input> lui-même (pas un
+                // wrapper englobant le bouton) — `.find('.ant-input-search-button')` n'y trouve donc
+                // jamais rien. Entrée déclenche le même `@search` que le clic (rechercherPatient()
+                // ne lit que idhRecherche, jamais l'événement), sans dépendre de la structure DOM interne.
+                cy.get('[data-cy=rdv-recherche-idh]').type(`${patient.idh}{enter}`);
 
                 cy.contains('Patient :').should('be.visible');
 
