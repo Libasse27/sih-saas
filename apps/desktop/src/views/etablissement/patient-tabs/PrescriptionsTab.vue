@@ -110,12 +110,18 @@ async function ouvrirDetail(prescription: Prescription): Promise<void> {
   try {
     detailEnCours.value = await prescriptionsService.findOne(props.patientId, prescription.id);
     if (detailEnCours.value.statut === PrescriptionStatut.VALIDEE) {
+      // Initialisation synchrone de toutes les lignes AVANT le moindre await : dès l'assignation
+      // de detailEnCours.value ci-dessus, le tableau peut se rendre (v-if="detailEnCours") — un
+      // await intercalé ici laisserait passer un rendu avec dispensationSelections[ligne.id]
+      // encore undefined, faisant planter le v-model du select de lot.
+      for (const ligne of detailEnCours.value.lignes) {
+        dispensationSelections[ligne.id] = { stockMedicamentId: undefined, quantite: 1 };
+      }
       for (const ligne of detailEnCours.value.lignes) {
         if (!stockParMedicament[ligne.medicamentId]) {
           const resultat = await pharmacieService.findStock(1, 50, ligne.medicamentId);
           stockParMedicament[ligne.medicamentId] = resultat.items;
         }
-        dispensationSelections[ligne.id] = { stockMedicamentId: undefined, quantite: 1 };
       }
     }
   } finally {
