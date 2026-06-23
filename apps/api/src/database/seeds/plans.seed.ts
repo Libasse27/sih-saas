@@ -27,6 +27,7 @@ const PLANS: Array<Partial<PlanEntity>> = [
       ClinicalModule.DME,
       ClinicalModule.RDV,
       ClinicalModule.ADMISSIONS,
+      ClinicalModule.URGENCES,
       ClinicalModule.PHARMACIE,
       ClinicalModule.LABORATOIRE,
       ClinicalModule.IMAGERIE,

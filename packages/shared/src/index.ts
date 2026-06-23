@@ -15,6 +15,7 @@ export * from './enums/support.enum';
 export * from './enums/coupon.enum';
 export * from './enums/consentement.enum';
 export * from './enums/cdp.enum';
+export * from './enums/urgence.enum';
 export * from './types/api-response';
 export * from './types/jwt-payload';
 export * from './types/plan';

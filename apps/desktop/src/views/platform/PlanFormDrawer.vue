@@ -12,6 +12,7 @@ const LIBELLE_MODULE: Record<ClinicalModule, string> = {
   [ClinicalModule.DME]: 'Dossier médical (DME)',
   [ClinicalModule.RDV]: 'Rendez-vous',
   [ClinicalModule.ADMISSIONS]: 'Admissions / Lits',
+  [ClinicalModule.URGENCES]: 'Urgences',
   [ClinicalModule.PHARMACIE]: 'Pharmacie',
   [ClinicalModule.LABORATOIRE]: 'Laboratoire',
   [ClinicalModule.IMAGERIE]: 'Imagerie',

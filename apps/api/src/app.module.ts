@@ -35,6 +35,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { SocialModule } from './modules/social/social.module';
 import { SterilisationModule } from './modules/sterilisation/sterilisation.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+import { UrgencesModule } from './modules/urgences/urgences.module';
 import { UsersModule } from './modules/users/users.module';
 import { SharedModule } from './shared/shared.module';
 
@@ -78,6 +79,7 @@ import { SharedModule } from './shared/shared.module';
     NotificationsModule,
     AdmissionsLitsModule,
     RendezVousModule,
+    UrgencesModule,
     ConsultationsModule,
     PrescriptionsModule,
     PharmacieModule,

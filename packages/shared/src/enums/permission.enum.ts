@@ -34,6 +34,13 @@ export enum Permission {
   LIT_ASSIGN = 'lit:assign',
   LIT_LIBERER = 'lit:liberer',
 
+  // Urgences
+  URGENCE_TRIAGE = 'urgence:triage',
+  URGENCE_VIEW = 'urgence:view',
+  URGENCE_PRISE_EN_CHARGE = 'urgence:prise-en-charge', // 🩺
+  URGENCE_SURVEILLANCE = 'urgence:surveillance', // 🩺
+  URGENCE_ALERTE = 'urgence:alerte', // 🩺
+
   // Prescription
   PRESCRIPTION_CREATE = 'prescription:create', // 🩺
   PRESCRIPTION_VALIDATE = 'prescription:validate', // 🩺
@@ -94,4 +101,7 @@ export const CARE_CONTEXT_PERMISSIONS: ReadonlySet<Permission> = new Set([
   Permission.ADMINISTRATION_CREATE,
   Permission.LABO_REQUEST,
   Permission.IMAGERIE_REQUEST,
+  Permission.URGENCE_PRISE_EN_CHARGE,
+  Permission.URGENCE_SURVEILLANCE,
+  Permission.URGENCE_ALERTE,
 ]);

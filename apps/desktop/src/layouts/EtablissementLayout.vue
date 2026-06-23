@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  AlertOutlined,
   CalendarOutlined,
   DashboardOutlined,
   DollarOutlined,
@@ -60,6 +61,9 @@ const menuItems = computed(() => {
   }
   if (auth.aPermission(Permission.ADMISSION_CREATE)) {
     items.push({ key: 'etablissement-admissions', label: 'Admissions', icon: MedicineBoxOutlined });
+  }
+  if (auth.aPermission(Permission.URGENCE_VIEW)) {
+    items.push({ key: 'etablissement-urgences', label: 'Urgences', icon: AlertOutlined });
   }
   if (auth.aPermission(Permission.STOCK_VIEW) || auth.aPermission(Permission.STOCK_MANAGE) || auth.aPermission(Permission.DISPENSATION_CREATE)) {
     items.push({ key: 'etablissement-pharmacie', label: 'Pharmacie', icon: ExperimentOutlined });

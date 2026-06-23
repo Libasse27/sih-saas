@@ -99,6 +99,11 @@ const router = createRouter({
           component: () => import('../views/etablissement/AdmissionsListView.vue'),
         },
         {
+          path: 'urgences',
+          name: 'etablissement-urgences',
+          component: () => import('../views/etablissement/UrgencesView.vue'),
+        },
+        {
           path: 'pharmacie',
           name: 'etablissement-pharmacie',
           component: () => import('../views/etablissement/PharmacieView.vue'),

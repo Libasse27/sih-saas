@@ -58,6 +58,12 @@ export class ServicesService {
     return service;
   }
 
+  /** `code` est unique par établissement (voir l'index sur ServiceEntity) — utilisé pour résoudre
+   * le service "URGENCES" provisionné par défaut sans imposer LIT_VIEW à l'appelant. */
+  async findByCode(code: string): Promise<ServiceEntity | null> {
+    return this.repository.findOne({ where: { code } });
+  }
+
   async update(id: string, dto: UpdateServiceDto, actingUserId: string): Promise<ServiceEntity> {
     const service = await this.findById(id);
     Object.assign(service, dto);
