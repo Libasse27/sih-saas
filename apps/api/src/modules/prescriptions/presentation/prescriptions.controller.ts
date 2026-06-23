@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CareContextGuard } from '../../../shared/guards/care-context.guard';
@@ -34,19 +34,31 @@ export class PrescriptionsController {
     return this.prescriptionsService.create(patientId, dto, currentUser.sub);
   }
 
+  /**
+   * Pas de @RequirePermissions : OR (PRESCRIPTION_CREATE | DISPENSATION_CREATE) impossible à
+   * exprimer avec ce décorateur (ET logique, voir permissions.guard.ts) — vérifié manuellement
+   * ci-dessous, même pattern que UsersController.assertAnnuairePersonnelAccess. Le pharmacien doit
+   * voir les prescriptions d'un patient pour savoir quoi dispenser, sans jamais pouvoir lui-même en
+   * créer ou les valider. CareContextGuard reste actif pour les deux rôles (inchangé).
+   */
   @Get()
-  @RequirePermissions(Permission.PRESCRIPTION_CREATE)
   @UseGuards(CareContextGuard)
   @ResponseMessage('Prescriptions du patient.')
-  findAll(@Param('patientId', ParseUUIDPipe) patientId: string, @Query() query: PaginationQueryDto) {
+  findAll(
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+    @Query() query: PaginationQueryDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    this.assertAccesLecture(currentUser);
     return this.prescriptionsService.findByPatient(patientId, query.page, query.limit);
   }
 
+  /** Même OR (PRESCRIPTION_CREATE | DISPENSATION_CREATE) que findAll, vérifié manuellement — le pharmacien ouvre le détail d'une prescription pour la dispenser. */
   @Get(':id')
-  @RequirePermissions(Permission.PRESCRIPTION_CREATE)
   @UseGuards(CareContextGuard)
   @ResponseMessage('Prescription récupérée.')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() currentUser: JwtPayload) {
+    this.assertAccesLecture(currentUser);
     const prescription = await this.prescriptionsService.findById(id);
     const lignes = await this.prescriptionsService.findLignes(id);
     return { ...prescription, lignes };
@@ -66,5 +78,12 @@ export class PrescriptionsController {
   @ResponseMessage('Prescription annulée.')
   annuler(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() currentUser: JwtPayload) {
     return this.prescriptionsService.annuler(id, currentUser.sub);
+  }
+
+  /** OR (PRESCRIPTION_CREATE | DISPENSATION_CREATE), impossible à exprimer avec @RequirePermissions (ET logique). */
+  private assertAccesLecture(user: JwtPayload): void {
+    if (!user.permissions.includes(Permission.PRESCRIPTION_CREATE) && !user.permissions.includes(Permission.DISPENSATION_CREATE)) {
+      throw new ForbiddenException('Accès refusé : permission manquante pour cette action.');
+    }
   }
 }

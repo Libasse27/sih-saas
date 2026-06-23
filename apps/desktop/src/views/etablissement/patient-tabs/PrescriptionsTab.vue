@@ -49,7 +49,10 @@ async function charger(): Promise<void> {
   try {
     const [resultat, resultatCatalogue] = await Promise.all([
       prescriptionsService.findAll(props.patientId, 1, 50),
-      catalogue.value.length ? Promise.resolve({ items: catalogue.value }) : pharmacieService.findCatalogue(1, 200),
+      // 100, pas 200 : PaginationQueryDto plafonne `limit` à 100 (@Max), toute valeur au-delà
+      // renvoie 400 — faisait échouer tout le Promise.all (capturé comme "lien de soin absent",
+      // message trompeur sans rapport avec la vraie cause).
+      catalogue.value.length ? Promise.resolve({ items: catalogue.value }) : pharmacieService.findCatalogue(1, 100),
     ]);
     items.value = resultat.items;
     catalogue.value = resultatCatalogue.items;

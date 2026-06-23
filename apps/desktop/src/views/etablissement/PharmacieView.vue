@@ -36,7 +36,8 @@ const formulaireCatalogue = reactive({ dci: '', codeAtc: '', forme: '', dosage: 
 async function chargerCatalogue(): Promise<void> {
   chargementCatalogue.value = true;
   try {
-    const resultat = await pharmacieService.findCatalogue(1, 200);
+    // 100, pas 200 : PaginationQueryDto plafonne `limit` à 100 (@Max), toute valeur au-delà renvoie 400.
+    const resultat = await pharmacieService.findCatalogue(1, 100);
     catalogue.value = resultat.items;
   } finally {
     chargementCatalogue.value = false;

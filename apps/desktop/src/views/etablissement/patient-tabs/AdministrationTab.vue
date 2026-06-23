@@ -41,7 +41,9 @@ async function charger(): Promise<void> {
     const [resultatAdministrations, resultatPrescriptions, resultatCatalogue] = await Promise.all([
       pharmacieService.findAdministrations(props.patientId, 1, 50),
       prescriptionsService.findAll(props.patientId, 1, 50),
-      pharmacieService.findCatalogue(1, 200),
+      // 100, pas 200 : PaginationQueryDto plafonne `limit` à 100 (@Max), toute valeur au-delà
+      // renvoie 400 et faisait échouer tout le Promise.all.
+      pharmacieService.findCatalogue(1, 100),
     ]);
     items.value = resultatAdministrations.items;
 
