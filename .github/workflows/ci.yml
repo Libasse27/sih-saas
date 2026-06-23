@@ -7,7 +7,11 @@ on:
 
 env:
   PNPM_VERSION: "10"
-  NODE_VERSION: "20"
+  # 24, pas 20 (EOL, voir l'avertissement de dépréciation GitHub Actions) : aligné sur la version
+  # réellement utilisée en local depuis plusieurs phases — un écart de version Node entre CI (20)
+  # et local (24) est une cause plausible du job "Lint, build, tests unitaires" resté rouge alors
+  # qu'il passe toujours en local.
+  NODE_VERSION: "24"
 
 jobs:
   build-test:
@@ -100,6 +104,13 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # `pnpm install` ne suffit pas : le runner est éphémère (rien dans ~/.cache/Cypress d'un
+      # run à l'autre) et `install: false` ci-dessous désactive la vérification/téléchargement
+      # intégrée de cypress-io/github-action — sans cette étape, le job échouait systématiquement
+      # avec "the Cypress binary is missing", jamais à cause des specs elles-mêmes.
+      - name: Installer le binaire Cypress
+        run: pnpm --filter @sih-saas/desktop exec cypress install
 
       - name: Démarrer les conteneurs de dev
         run: docker compose -f docker-compose.dev.yml up -d --wait
