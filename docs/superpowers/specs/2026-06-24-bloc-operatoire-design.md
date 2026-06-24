@@ -40,11 +40,15 @@ dans un service, sauf `TypeOrmModule.forFeature` dans le module pour les migrati
 | etablissementId | uuid | indexé |
 | nom | varchar | ex. "Salle 1" |
 | equipement | text, nullable | description libre |
-| statut | enum `SalleOperationStatut` | `DISPONIBLE` (défaut) / `OCCUPEE` / `HORS_SERVICE` |
+| statut | enum `SalleOperationStatut` | `LIBRE` (défaut) / `OCCUPEE` / `MAINTENANCE` — même vocabulaire que `LitStatut` (Phase 6), pas de nouveaux termes |
 
 `OCCUPEE` est piloté automatiquement par `InterventionsService` (démarrage/clôture), jamais une action
-manuelle. `HORS_SERVICE` reste une bascule manuelle (admin établissement, `ETABLISSEMENT_SETTINGS`), pour
-signaler une salle en maintenance — pas de phase "nettoyage" trackée séparément (non demandée, YAGNI).
+manuelle. `MAINTENANCE` reste une bascule manuelle (admin établissement, `ETABLISSEMENT_SETTINGS`), pour
+signaler une salle indisponible — pas de phase "nettoyage" trackée séparément (non demandée, YAGNI). La
+prévention des doubles réservations se fait en validant, à la création/replanification d'une
+`Intervention`, qu'aucune autre intervention non `ANNULEE` ne chevauche le créneau
+`dateHeurePrevue`/`dureeEstimeeMinutes` sur la même salle — pas via le `statut` de la salle, qui ne
+reflète que l'occupation **courante**, pas un calendrier.
 
 ### `InterventionEntity` (`clinic.interventions`)
 
