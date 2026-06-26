@@ -1,4 +1,4 @@
-import type { ApiResponse, ClinicalModule, PlanFeatures, PlanLimites, PlanTarifs } from '@sih-saas/shared';
+import type { ApiResponse, ModuleMetier, PlanFeatures, PlanLimites, PlanTarifs } from '@sih-saas/shared';
 import { api } from './api';
 
 export interface Plan {
@@ -8,7 +8,7 @@ export interface Plan {
   description: string | null;
   tarifs: PlanTarifs;
   limites: PlanLimites;
-  modules: ClinicalModule[];
+  modules: ModuleMetier[];
   features: PlanFeatures;
   essaiGratuitJours: number;
   visible: boolean;
@@ -25,7 +25,7 @@ export interface PlanFormData {
   description?: string;
   tarifs: PlanTarifs;
   limites: PlanLimites;
-  modules: ClinicalModule[];
+  modules: ModuleMetier[];
   features: PlanFeatures;
   essaiGratuitJours?: number;
   visible?: boolean;

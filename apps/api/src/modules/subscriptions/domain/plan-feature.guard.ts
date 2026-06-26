@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ClinicalModule, JwtPayload } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload } from '@sih-saas/shared';
 import { SubscriptionsService } from '../application/subscriptions.service';
 import { PLAN_FEATURE_KEY } from './require-plan-feature.decorator';
 
@@ -12,7 +12,7 @@ export class PlanFeatureGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredModule = this.reflector.getAllAndOverride<ClinicalModule | undefined>(PLAN_FEATURE_KEY, [
+    const requiredModule = this.reflector.getAllAndOverride<ModuleMetier | undefined>(PLAN_FEATURE_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { IsOptional, IsUUID } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -24,7 +24,7 @@ class FindServicesQueryDto extends PaginationQueryDto {
 @Controller('services')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.ADMISSIONS)
+@RequirePlanFeature(ModuleMetier.ADMINISTRATION_DIRECTION)
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 

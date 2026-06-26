@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CareContextGuard } from '../../../shared/guards/care-context.guard';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -18,7 +18,7 @@ import { CreateAdministrationDto } from './dto/create-administration.dto';
 @Controller('patients/:patientId/administrations')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard, CareContextGuard)
-@RequirePlanFeature(ClinicalModule.PHARMACIE)
+@RequirePlanFeature(ModuleMetier.PHARMACIE)
 @RequirePermissions(Permission.ADMINISTRATION_CREATE)
 export class AdministrationController {
   constructor(private readonly administrationService: AdministrationService) {}

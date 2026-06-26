@@ -70,6 +70,7 @@ export enum Permission {
   ASSURANCE_MANAGE = 'assurance:manage',
 
   // Support
+  RH_VIEW = 'rh:view',
   RH_MANAGE = 'rh:manage',
   SOCIAL_MANAGE = 'social:manage',
   MAINTENANCE_MANAGE = 'maintenance:manage',

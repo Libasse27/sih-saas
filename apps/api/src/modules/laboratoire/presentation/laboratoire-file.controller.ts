@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, DemandeStatut, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, DemandeStatut, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { IsEnum, IsOptional } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -29,7 +29,7 @@ class FindDemandesQueryDto extends PaginationQueryDto {
 @Controller('demandes-analyse')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.LABORATOIRE)
+@RequirePlanFeature(ModuleMetier.LABORATOIRE)
 export class LaboratoireFileController {
   constructor(
     private readonly demandesAnalyseService: DemandesAnalyseService,

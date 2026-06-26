@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { AdmissionStatut, ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { AdmissionStatut, ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -28,7 +28,7 @@ class FindAdmissionsQueryDto extends PaginationQueryDto {
 @Controller('admissions')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.ADMISSIONS)
+@RequirePlanFeature(ModuleMetier.HOSPITALISATION)
 @RequirePermissions(Permission.ADMISSION_CREATE)
 export class AdmissionsController {
   constructor(private readonly admissionsService: AdmissionsService) {}

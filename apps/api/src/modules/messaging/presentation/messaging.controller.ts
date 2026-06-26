@@ -12,8 +12,8 @@ import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
 
 /**
- * Messagerie sécurisée (Phase 14, prompt maître §14) — pas de @RequirePlanFeature : non listée dans
- * ClinicalModule (§8), toujours disponible, comme les modules support. Seul le patient peut
+ * Messagerie sécurisée (Phase 14, prompt maître §14) — pas de @RequirePlanFeature : ne fait pas
+ * partie des 15 modules métiers (§10.4), toujours disponible, comme les modules support. Seul le patient peut
  * démarrer une conversation (POST /conversations) ; le personnel ne peut que répondre à une
  * conversation déjà initiée par un patient — décision volontaire pour rester dans le périmètre
  * "le patient prend contact", pas une messagerie générale bidirectionnelle libre.

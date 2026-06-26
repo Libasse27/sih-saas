@@ -1,6 +1,6 @@
 import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, RendezVousStatut, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, RendezVousStatut, Scope } from '@sih-saas/shared';
 import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -33,7 +33,7 @@ class FindRendezVousQueryDto extends PaginationQueryDto {
 @ApiBearerAuth()
 @Controller('rendez-vous')
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.RDV)
+@RequirePlanFeature(ModuleMetier.ACCUEIL_ADMISSION)
 export class RendezVousController {
   constructor(
     private readonly rendezVousService: RendezVousService,

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CareContextGuard } from '../../../shared/guards/care-context.guard';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -22,7 +22,7 @@ import { CreateConsultationDto } from './dto/create-consultation.dto';
 @Controller('patients/:patientId/consultations')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.RDV)
+@RequirePlanFeature(ModuleMetier.CONSULTATIONS_MEDICALES)
 export class ConsultationsController {
   constructor(private readonly consultationsService: ConsultationsService) {}
 

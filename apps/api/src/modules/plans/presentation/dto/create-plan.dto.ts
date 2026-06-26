@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ClinicalModule } from '@sih-saas/shared';
+import { ModuleMetier } from '@sih-saas/shared';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -39,10 +39,10 @@ export class CreatePlanDto {
   @Type(() => PlanLimitesDto)
   limites: PlanLimitesDto;
 
-  @ApiProperty({ enum: ClinicalModule, isArray: true })
+  @ApiProperty({ enum: ModuleMetier, isArray: true })
   @IsArray()
-  @IsEnum(ClinicalModule, { each: true })
-  modules: ClinicalModule[];
+  @IsEnum(ModuleMetier, { each: true })
+  modules: ModuleMetier[];
 
   @ApiProperty({ type: PlanFeaturesDto })
   @ValidateNested()

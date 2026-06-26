@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, LitStatut, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, LitStatut, Permission, Scope } from '@sih-saas/shared';
 import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -32,7 +32,7 @@ class FindLitsQueryDto extends PaginationQueryDto {
 @Controller('lits')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.ADMISSIONS)
+@RequirePlanFeature(ModuleMetier.HOSPITALISATION)
 export class LitsController {
   constructor(private readonly litsService: LitsService) {}
 

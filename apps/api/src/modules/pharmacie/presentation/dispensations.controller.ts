@@ -1,6 +1,6 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
@@ -16,7 +16,7 @@ import { CreateDispensationDto } from './dto/create-dispensation.dto';
 @Controller('dispensations')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.PHARMACIE)
+@RequirePlanFeature(ModuleMetier.PHARMACIE)
 export class DispensationsController {
   constructor(private readonly dispensationsService: DispensationsService) {}
 

@@ -1,4 +1,4 @@
-import { ClinicalModule } from '@sih-saas/shared';
+import { ModuleMetier } from '@sih-saas/shared';
 import { PlanEntity } from '../../modules/plans/infrastructure/entities/plan.entity';
 import { AppDataSource } from '../data-source';
 
@@ -10,7 +10,13 @@ const PLANS: Array<Partial<PlanEntity>> = [
     description: 'Pour les petites structures qui démarrent leur transition numérique.',
     tarifs: { mensuel: 50000, annuel: 540000, devise: 'XOF' },
     limites: { maxUtilisateurs: 5, maxLits: 20, maxStockageMo: 1024 },
-    modules: [ClinicalModule.DME, ClinicalModule.RDV, ClinicalModule.ADMISSIONS],
+    modules: [
+      ModuleMetier.ACCUEIL_ADMISSION,
+      ModuleMetier.CONSULTATIONS_MEDICALES,
+      ModuleMetier.HOSPITALISATION,
+      ModuleMetier.ADMINISTRATION_DIRECTION,
+      ModuleMetier.LOGISTIQUE_STOCK,
+    ],
     features: { supportPrioritaire: false, apiAccess: false, multiSites: false },
     essaiGratuitJours: 14,
     visible: true,
@@ -24,14 +30,18 @@ const PLANS: Array<Partial<PlanEntity>> = [
     tarifs: { mensuel: 150000, annuel: 1620000, devise: 'XOF' },
     limites: { maxUtilisateurs: 20, maxLits: 100, maxStockageMo: 10240 },
     modules: [
-      ClinicalModule.DME,
-      ClinicalModule.RDV,
-      ClinicalModule.ADMISSIONS,
-      ClinicalModule.URGENCES,
-      ClinicalModule.PHARMACIE,
-      ClinicalModule.LABORATOIRE,
-      ClinicalModule.IMAGERIE,
-      ClinicalModule.FACTURATION,
+      ModuleMetier.ACCUEIL_ADMISSION,
+      ModuleMetier.CONSULTATIONS_MEDICALES,
+      ModuleMetier.HOSPITALISATION,
+      ModuleMetier.ADMINISTRATION_DIRECTION,
+      ModuleMetier.LOGISTIQUE_STOCK,
+      ModuleMetier.URGENCES,
+      ModuleMetier.PHARMACIE,
+      ModuleMetier.LABORATOIRE,
+      ModuleMetier.IMAGERIE_MEDICALE,
+      ModuleMetier.COMPTABILITE_FACTURATION,
+      ModuleMetier.RH,
+      ModuleMetier.TABLEAU_DE_BORD_STATISTIQUES,
     ],
     features: { supportPrioritaire: true, apiAccess: false, multiSites: false },
     essaiGratuitJours: 14,
@@ -45,7 +55,7 @@ const PLANS: Array<Partial<PlanEntity>> = [
     description: 'Pour les groupes hospitaliers multi-sites avec télémédecine et accès API.',
     tarifs: { mensuel: 300000, annuel: 3240000, devise: 'XOF' },
     limites: { maxUtilisateurs: -1, maxLits: -1, maxStockageMo: -1 },
-    modules: Object.values(ClinicalModule),
+    modules: Object.values(ModuleMetier),
     features: { supportPrioritaire: true, apiAccess: true, multiSites: true },
     essaiGratuitJours: 30,
     visible: true,

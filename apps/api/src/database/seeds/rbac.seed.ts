@@ -20,6 +20,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.ABONNEMENT_ETABLISSEMENT_RENEW,
     Permission.AUDIT_READ_LOCAL,
     Permission.API_KEY_MANAGE,
+    Permission.RH_VIEW,
   ],
   [Role.DIRECTEUR]: [
     Permission.UTILISATEUR_MANAGE,
@@ -28,6 +29,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.ABONNEMENT_ETABLISSEMENT_RENEW,
     Permission.AUDIT_READ_LOCAL,
     Permission.API_KEY_MANAGE,
+    Permission.RH_VIEW,
   ],
   [Role.ADMIN_SYSTEME]: [Permission.UTILISATEUR_MANAGE, Permission.ETABLISSEMENT_SETTINGS],
   [Role.MEDECIN]: [
@@ -162,7 +164,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   [Role.GESTIONNAIRE_LITS]: [Permission.LIT_VIEW, Permission.LIT_ASSIGN, Permission.LIT_LIBERER],
   [Role.ASSISTANT_SOCIAL]: [Permission.SOCIAL_MANAGE, Permission.DOSSIER_READ],
-  [Role.RH]: [Permission.RH_MANAGE],
+  [Role.RH]: [Permission.RH_VIEW, Permission.RH_MANAGE],
   [Role.PATIENT]: [
     Permission.DOSSIER_READ,
     Permission.RDV_CREATE,

@@ -1,5 +1,8 @@
-// Modules support (Phase 11, prompt maître §10.4) — non gateés par Plan.modules (ClinicalModule),
-// disponibles quel que soit le forfait, au même titre que la gestion des utilisateurs/services.
+// Modules support (Phase 11, prompt maître §10.4) — Maintenance et Stérilisation sont gatés par
+// Plan.modules via ModuleMetier.LOGISTIQUE_STOCK depuis la restructuration de la taxonomie en 15
+// modules métiers (Logistique/Maintenance/Stérilisation forment un seul module métier). Seuls la
+// gestion des utilisateurs/services et les modules Service social/Messagerie restent non gatés,
+// disponibles quel que soit le forfait.
 export enum DemandeMaintenanceStatut {
   SIGNALEE = 'SIGNALEE',
   EN_COURS = 'EN_COURS',

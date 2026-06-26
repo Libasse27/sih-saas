@@ -42,7 +42,7 @@ const STATUT_COULEUR: Record<SubscriptionStatut, string> = {
 
 /**
  * Modules support (Phase 12) — chacun gardé par sa propre permission, jamais par un forfait
- * (ClinicalModule), voir prompt maître §8. "Sécurité" (MFA) n'a volontairement aucune permission :
+ * (ModuleMetier), voir prompt maître §8. "Sécurité" (MFA) n'a volontairement aucune permission :
  * c'est un réglage du compte courant, accessible à tout utilisateur établissement connecté.
  */
 const menuItems = computed(() => {

@@ -1,6 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, Permission, PrescriptionStatut, Scope } from '@sih-saas/shared';
+import { ModuleMetier, Permission, PrescriptionStatut, Scope } from '@sih-saas/shared';
 import { IsEnum, IsOptional } from 'class-validator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
@@ -30,7 +30,7 @@ class FindPrescriptionsQueryDto extends PaginationQueryDto {
 @Controller('prescriptions')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.DME)
+@RequirePlanFeature(ModuleMetier.CONSULTATIONS_MEDICALES)
 @RequirePermissions(Permission.DISPENSATION_CREATE)
 export class PrescriptionsFileController {
   constructor(private readonly prescriptionsService: PrescriptionsService) {}

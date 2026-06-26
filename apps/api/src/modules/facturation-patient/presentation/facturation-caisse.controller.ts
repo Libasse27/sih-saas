@@ -1,6 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, FacturePatientStatut, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, FacturePatientStatut, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { IsEnum, IsOptional } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -23,7 +23,7 @@ class FindFacturesQueryDto extends PaginationQueryDto {
 @Controller('factures-patient')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.FACTURATION)
+@RequirePlanFeature(ModuleMetier.COMPTABILITE_FACTURATION)
 export class FacturationCaisseController {
   constructor(private readonly facturesPatientService: FacturesPatientService) {}
 

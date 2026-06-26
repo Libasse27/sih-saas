@@ -1,20 +1,23 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
 import { Scopes } from '../../../shared/decorators/scopes.decorator';
 import { PaginationQueryDto } from '../../../shared/dto/pagination-query.dto';
+import { PlanFeatureGuard } from '../../subscriptions/domain/plan-feature.guard';
+import { RequirePlanFeature } from '../../subscriptions/domain/require-plan-feature.decorator';
 import { MaintenanceService } from '../application/maintenance.service';
 import { CreateDemandeMaintenanceDto } from './dto/create-demande-maintenance.dto';
 import { UpdateDemandeMaintenanceDto } from './dto/update-demande-maintenance.dto';
 
-/** Pas de RequirePlanFeature : module support, non listé dans ClinicalModule (prompt maître §8), toujours disponible. */
 @ApiTags('Maintenance')
 @ApiBearerAuth()
 @Controller('demandes-maintenance')
 @Scopes(Scope.ETABLISSEMENT)
+@UseGuards(PlanFeatureGuard)
+@RequirePlanFeature(ModuleMetier.LOGISTIQUE_STOCK)
 @RequirePermissions(Permission.MAINTENANCE_MANAGE)
 export class MaintenanceController {
   constructor(private readonly maintenanceService: MaintenanceService) {}

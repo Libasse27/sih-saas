@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, Permission, Scope } from '@sih-saas/shared';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
 import { Scopes } from '../../../shared/decorators/scopes.decorator';
@@ -16,7 +16,7 @@ import { CreateMedicamentCatalogueDto } from './dto/create-medicament-catalogue.
 @Controller('medicaments-catalogue')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.PHARMACIE)
+@RequirePlanFeature(ModuleMetier.PHARMACIE)
 export class MedicamentsCatalogueController {
   constructor(private readonly catalogueService: MedicamentsCatalogueService) {}
 

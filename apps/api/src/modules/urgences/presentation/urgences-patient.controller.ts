@@ -1,6 +1,6 @@
 import { Body, Controller, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CareContextGuard } from '../../../shared/guards/care-context.guard';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -25,7 +25,7 @@ import { CreateSurveillanceUrgenceDto } from './dto/create-surveillance-urgence.
 @Controller('patients/:patientId/urgences')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.URGENCES)
+@RequirePlanFeature(ModuleMetier.URGENCES)
 export class UrgencesPatientController {
   constructor(private readonly urgencesService: UrgencesService) {}
 

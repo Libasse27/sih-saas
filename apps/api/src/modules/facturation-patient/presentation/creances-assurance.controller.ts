@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope, StatutCreanceAssurance } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope, StatutCreanceAssurance } from '@sih-saas/shared';
 import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -32,7 +32,7 @@ class FindCreancesQueryDto extends PaginationQueryDto {
 @Controller('creances-assurance')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.FACTURATION)
+@RequirePlanFeature(ModuleMetier.COMPTABILITE_FACTURATION)
 @RequirePermissions(Permission.ASSURANCE_MANAGE)
 export class CreancesAssuranceController {
   constructor(private readonly creancesAssuranceService: CreancesAssuranceService) {}

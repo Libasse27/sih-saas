@@ -1,6 +1,6 @@
 import { Body, Controller, ForbiddenException, Get, Headers, Param, ParseUUIDPipe, Post, RawBodyRequest, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import type { Request } from 'express';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { Public } from '../../../shared/decorators/public.decorator';
@@ -33,7 +33,7 @@ export class PaiementsPatientController {
   @Post('factures-patient/:id/paiements')
   @Scopes(Scope.ETABLISSEMENT, Scope.PATIENT)
   @UseGuards(PlanFeatureGuard)
-  @RequirePlanFeature(ClinicalModule.FACTURATION)
+  @RequirePlanFeature(ModuleMetier.COMPTABILITE_FACTURATION)
   @RequirePermissions(Permission.PAIEMENT_PATIENT_CREATE)
   @ResponseMessage('Paiement enregistré.')
   async create(
@@ -56,7 +56,7 @@ export class PaiementsPatientController {
   @Get('factures-patient/:id/paiements')
   @Scopes(Scope.ETABLISSEMENT)
   @UseGuards(PlanFeatureGuard)
-  @RequirePlanFeature(ClinicalModule.FACTURATION)
+  @RequirePlanFeature(ModuleMetier.COMPTABILITE_FACTURATION)
   @RequirePermissions(Permission.PAIEMENT_PATIENT_CREATE)
   @ResponseMessage('Paiements de la facture.')
   findAll(@Param('id', ParseUUIDPipe) facturePatientId: string) {

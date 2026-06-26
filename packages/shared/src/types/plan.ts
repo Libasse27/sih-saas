@@ -1,4 +1,4 @@
-import { ClinicalModule } from '../enums/clinical-module.enum';
+import { ModuleMetier } from '../enums/module-metier.enum';
 
 export interface PlanTarifs {
   mensuel: number;
@@ -31,7 +31,7 @@ export interface PlanSnapshot {
   nom: string;
   tarifs: PlanTarifs;
   limites: PlanLimites;
-  modules: ClinicalModule[];
+  modules: ModuleMetier[];
   features: PlanFeatures;
   version: number;
 }

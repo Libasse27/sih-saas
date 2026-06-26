@@ -3,8 +3,9 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGener
 
 /**
  * Module support (Phase 11, prompt maître §10.4/§12) — TECHNICIEN_MAINTENANCE, permission
- * `maintenance:manage`, aucun accès clinique (matrice-rbac.md). Non gaté par Plan.modules : pas
- * dans ClinicalModule, disponible quel que soit le forfait (comme `services`/`utilisateurs`).
+ * `maintenance:manage`, aucun accès clinique (matrice-rbac.md). Gaté par Plan.modules via
+ * `ModuleMetier.LOGISTIQUE_STOCK` (restructuration taxonomie §10.4) — voir
+ * presentation/maintenance.controller.ts.
  */
 @Entity({ schema: 'clinic', name: 'demandes_maintenance' })
 @Index(['etablissementId'])

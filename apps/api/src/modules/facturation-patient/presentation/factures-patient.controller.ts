@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { ModuleMetier, JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { isUUID } from 'class-validator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -19,7 +19,7 @@ import { CreateFacturePatientDto } from './dto/create-facture-patient.dto';
 @Controller('patients/:patientId/factures-patient')
 @Scopes(Scope.ETABLISSEMENT)
 @UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.FACTURATION)
+@RequirePlanFeature(ModuleMetier.COMPTABILITE_FACTURATION)
 @RequirePermissions(Permission.FACTURE_PATIENT_CREATE)
 export class FacturesPatientController {
   constructor(

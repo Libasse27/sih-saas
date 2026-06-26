@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ClinicalModule } from '@sih-saas/shared';
+import { ModuleMetier } from '@sih-saas/shared';
 import { message } from 'ant-design-vue';
 import { reactive, ref, watch } from 'vue';
 import * as plansService from '../../services/plans.service';
@@ -8,17 +8,22 @@ import type { Plan, PlanFormData } from '../../services/plans.service';
 const props = defineProps<{ open: boolean; plan: Plan | null }>();
 const emit = defineEmits<{ (e: 'update:open', valeur: boolean): void; (e: 'saved'): void }>();
 
-const LIBELLE_MODULE: Record<ClinicalModule, string> = {
-  [ClinicalModule.DME]: 'Dossier médical (DME)',
-  [ClinicalModule.RDV]: 'Rendez-vous',
-  [ClinicalModule.ADMISSIONS]: 'Admissions / Lits',
-  [ClinicalModule.URGENCES]: 'Urgences',
-  [ClinicalModule.PHARMACIE]: 'Pharmacie',
-  [ClinicalModule.LABORATOIRE]: 'Laboratoire',
-  [ClinicalModule.IMAGERIE]: 'Imagerie',
-  [ClinicalModule.FACTURATION]: 'Facturation patient',
-  [ClinicalModule.TELEMEDECINE]: 'Télémédecine',
-  [ClinicalModule.API]: 'Accès API',
+const LIBELLE_MODULE: Record<ModuleMetier, string> = {
+  [ModuleMetier.ACCUEIL_ADMISSION]: 'Accueil / Admission',
+  [ModuleMetier.ADMINISTRATION_DIRECTION]: 'Administration / Direction',
+  [ModuleMetier.BLOC_OPERATOIRE]: 'Bloc opératoire',
+  [ModuleMetier.COMPTABILITE_FACTURATION]: 'Comptabilité / Facturation',
+  [ModuleMetier.CONSULTATIONS_MEDICALES]: 'Consultations médicales',
+  [ModuleMetier.HOSPITALISATION]: 'Hospitalisation',
+  [ModuleMetier.IMAGERIE_MEDICALE]: 'Imagerie médicale',
+  [ModuleMetier.KINESITHERAPIE_READAPTATION]: 'Kinésithérapie / Réadaptation',
+  [ModuleMetier.LABORATOIRE]: 'Laboratoire',
+  [ModuleMetier.LOGISTIQUE_STOCK]: 'Logistique / Stock',
+  [ModuleMetier.PHARMACIE]: 'Pharmacie',
+  [ModuleMetier.RH]: 'Ressources humaines',
+  [ModuleMetier.SECURITE_CONFORMITE]: 'Sécurité / Conformité',
+  [ModuleMetier.URGENCES]: 'Urgences',
+  [ModuleMetier.TABLEAU_DE_BORD_STATISTIQUES]: 'Tableau de bord / Statistiques',
 };
 
 function formulaireVide(): PlanFormData {
@@ -127,10 +132,10 @@ async function soumettre(): Promise<void> {
         </a-form-item>
       </a-space>
 
-      <a-divider>Modules cliniques inclus</a-divider>
+      <a-divider>Modules métiers inclus</a-divider>
       <a-checkbox-group v-model:value="formulaire.modules">
         <a-row>
-          <a-col v-for="module in Object.values(ClinicalModule)" :key="module" :span="12">
+          <a-col v-for="module in Object.values(ModuleMetier)" :key="module" :span="12">
             <a-checkbox :value="module">{{ LIBELLE_MODULE[module] }}</a-checkbox>
           </a-col>
         </a-row>

@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { ClinicalModule, EtablissementStatut, Periodicite, SubscriptionStatut } from '@sih-saas/shared';
+import { ModuleMetier, EtablissementStatut, Periodicite, SubscriptionStatut } from '@sih-saas/shared';
 import { PlanEntity } from '../../plans/infrastructure/entities/plan.entity';
 import { SubscriptionEntity } from '../infrastructure/entities/subscription.entity';
 import { SubscriptionsService } from './subscriptions.service';
@@ -25,7 +25,7 @@ describe('SubscriptionsService', () => {
       description: null,
       tarifs: { mensuel: 100000, annuel: 1080000, devise: 'XOF' },
       limites: { maxUtilisateurs: 5, maxLits: 50, maxStockageMo: 5000 },
-      modules: [ClinicalModule.DME, ClinicalModule.RDV],
+      modules: [ModuleMetier.CONSULTATIONS_MEDICALES, ModuleMetier.ACCUEIL_ADMISSION],
       features: { supportPrioritaire: false, apiAccess: false, multiSites: false },
       essaiGratuitJours: 0,
       visible: true,
@@ -261,17 +261,34 @@ describe('SubscriptionsService', () => {
   describe('hasModule', () => {
     it('renvoie true si le module fait partie du planSnapshot actif', async () => {
       repository.findOne.mockResolvedValue({
-        planSnapshot: { modules: [ClinicalModule.DME, ClinicalModule.IMAGERIE] },
+        planSnapshot: { modules: [ModuleMetier.CONSULTATIONS_MEDICALES, ModuleMetier.IMAGERIE_MEDICALE] },
       } as unknown as SubscriptionEntity);
 
-      await expect(service.hasModule('etab-1', ClinicalModule.IMAGERIE)).resolves.toBe(true);
-      await expect(service.hasModule('etab-1', ClinicalModule.PHARMACIE)).resolves.toBe(false);
+      await expect(service.hasModule('etab-1', ModuleMetier.IMAGERIE_MEDICALE)).resolves.toBe(true);
+      await expect(service.hasModule('etab-1', ModuleMetier.PHARMACIE)).resolves.toBe(false);
     });
 
     it('renvoie false en l’absence d’abonnement actif', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(service.hasModule('etab-1', ClinicalModule.DME)).resolves.toBe(false);
+      await expect(service.hasModule('etab-1', ModuleMetier.CONSULTATIONS_MEDICALES)).resolves.toBe(false);
+    });
+  });
+
+  describe('hasFeature', () => {
+    it('renvoie true si la feature est activée dans le planSnapshot actif', async () => {
+      repository.findOne.mockResolvedValue({
+        planSnapshot: { features: { supportPrioritaire: false, apiAccess: true, multiSites: false } },
+      } as unknown as SubscriptionEntity);
+
+      await expect(service.hasFeature('etab-1', 'apiAccess')).resolves.toBe(true);
+      await expect(service.hasFeature('etab-1', 'multiSites')).resolves.toBe(false);
+    });
+
+    it('renvoie false en l’absence d’abonnement actif', async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(service.hasFeature('etab-1', 'apiAccess')).resolves.toBe(false);
     });
   });
 

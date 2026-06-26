@@ -1,9 +1,10 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  ClinicalModule,
+  ModuleMetier,
   EtablissementStatut,
   Periodicite,
+  PlanFeatures,
   PlanLimites,
   PlatformStatistiques,
   SubscriptionStatut,
@@ -241,9 +242,18 @@ export class SubscriptionsService {
   }
 
   /** requirePlanFeature() — voir domain/plan-feature.guard.ts. */
-  async hasModule(etablissementId: string, module: ClinicalModule): Promise<boolean> {
+  async hasModule(etablissementId: string, module: ModuleMetier): Promise<boolean> {
     const subscription = await this.getActiveForEtablissement(etablissementId);
     return subscription?.planSnapshot.modules.includes(module) ?? false;
+  }
+
+  /**
+   * Même logique que `hasModule` mais pour une capacité technique transversale (`PlanFeatures`,
+   * ex. `apiAccess`) plutôt qu'un module métier — voir domain/plan-feature-flag.guard.ts.
+   */
+  async hasFeature(etablissementId: string, feature: keyof PlanFeatures): Promise<boolean> {
+    const subscription = await this.getActiveForEtablissement(etablissementId);
+    return subscription?.planSnapshot.features[feature] ?? false;
   }
 
   /**

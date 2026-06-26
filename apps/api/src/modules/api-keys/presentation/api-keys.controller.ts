@@ -1,22 +1,22 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { ResponseMessage } from '../../../shared/decorators/response-message.decorator';
 import { Scopes } from '../../../shared/decorators/scopes.decorator';
-import { PlanFeatureGuard } from '../../subscriptions/domain/plan-feature.guard';
-import { RequirePlanFeature } from '../../subscriptions/domain/require-plan-feature.decorator';
+import { PlanFeatureFlagGuard } from '../../subscriptions/domain/plan-feature-flag.guard';
+import { RequirePlanFeatureFlag } from '../../subscriptions/domain/require-plan-feature-flag.decorator';
 import { ApiKeysService } from '../application/api-keys.service';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
 
-/** Clés API scopées par établissement (Phase 11) — gardées par le module de forfait `apiAccess` (prérequis du module FHIR). */
+/** Clés API scopées par établissement (Phase 11) — gardées par le flag de forfait `apiAccess` (prérequis du module FHIR). */
 @ApiTags('Clés API')
 @ApiBearerAuth()
 @Controller('etablissements')
 @Scopes(Scope.ETABLISSEMENT)
-@UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.API)
+@UseGuards(PlanFeatureFlagGuard)
+@RequirePlanFeatureFlag('apiAccess')
 @RequirePermissions(Permission.API_KEY_MANAGE)
 export class ApiKeysController {
   constructor(private readonly apiKeysService: ApiKeysService) {}

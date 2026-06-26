@@ -1,6 +1,6 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ClinicalModule } from '@sih-saas/shared';
+import { ModuleMetier } from '@sih-saas/shared';
 import { PlanFeatureGuard } from './plan-feature.guard';
 
 describe('PlanFeatureGuard', () => {
@@ -12,7 +12,7 @@ describe('PlanFeatureGuard', () => {
     } as unknown as ExecutionContext;
   }
 
-  function buildReflector(requiredModule: ClinicalModule | undefined): Reflector {
+  function buildReflector(requiredModule: ModuleMetier | undefined): Reflector {
     return { getAllAndOverride: jest.fn(() => requiredModule) } as unknown as Reflector;
   }
 
@@ -26,15 +26,15 @@ describe('PlanFeatureGuard', () => {
 
   it('autorise si le module est inclus dans le planSnapshot actif', async () => {
     const subscriptionsService = { hasModule: jest.fn().mockResolvedValue(true) };
-    const guard = new PlanFeatureGuard(buildReflector(ClinicalModule.IMAGERIE), subscriptionsService as any);
+    const guard = new PlanFeatureGuard(buildReflector(ModuleMetier.IMAGERIE_MEDICALE), subscriptionsService as any);
 
     await expect(guard.canActivate(buildContext({ etablissementId: 'etab-1' }))).resolves.toBe(true);
-    expect(subscriptionsService.hasModule).toHaveBeenCalledWith('etab-1', ClinicalModule.IMAGERIE);
+    expect(subscriptionsService.hasModule).toHaveBeenCalledWith('etab-1', ModuleMetier.IMAGERIE_MEDICALE);
   });
 
   it("refuse si le module n'est pas inclus dans le forfait", async () => {
     const subscriptionsService = { hasModule: jest.fn().mockResolvedValue(false) };
-    const guard = new PlanFeatureGuard(buildReflector(ClinicalModule.IMAGERIE), subscriptionsService as any);
+    const guard = new PlanFeatureGuard(buildReflector(ModuleMetier.IMAGERIE_MEDICALE), subscriptionsService as any);
 
     await expect(guard.canActivate(buildContext({ etablissementId: 'etab-1' }))).rejects.toThrow(
       ForbiddenException,

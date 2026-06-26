@@ -1,12 +1,12 @@
 import { BadRequestException, Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ClinicalModule, JwtPayload, Permission, Scope } from '@sih-saas/shared';
+import { JwtPayload, Permission, Scope } from '@sih-saas/shared';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { RawResponse } from '../../../shared/decorators/raw-response.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { Scopes } from '../../../shared/decorators/scopes.decorator';
-import { PlanFeatureGuard } from '../../subscriptions/domain/plan-feature.guard';
-import { RequirePlanFeature } from '../../subscriptions/domain/require-plan-feature.decorator';
+import { PlanFeatureFlagGuard } from '../../subscriptions/domain/plan-feature-flag.guard';
+import { RequirePlanFeatureFlag } from '../../subscriptions/domain/require-plan-feature-flag.decorator';
 import { AuditContext, FhirService } from '../application/fhir.service';
 import { construireBundle } from '../domain/mappers/bundle.mapper';
 
@@ -21,8 +21,8 @@ import { construireBundle } from '../domain/mappers/bundle.mapper';
 @ApiBearerAuth()
 @Controller('fhir')
 @Scopes(Scope.ETABLISSEMENT)
-@UseGuards(PlanFeatureGuard)
-@RequirePlanFeature(ClinicalModule.API)
+@UseGuards(PlanFeatureFlagGuard)
+@RequirePlanFeatureFlag('apiAccess')
 @RequirePermissions(Permission.FHIR_READ)
 @RawResponse()
 export class FhirController {

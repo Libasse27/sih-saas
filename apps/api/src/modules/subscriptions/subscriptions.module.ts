@@ -8,6 +8,7 @@ import { UsersModule } from '../users/users.module';
 import { SubscriptionsService } from './application/subscriptions.service';
 import { SubscriptionLifecycleService } from './application/subscription-lifecycle.service';
 import { PlanFeatureGuard } from './domain/plan-feature.guard';
+import { PlanFeatureFlagGuard } from './domain/plan-feature-flag.guard';
 import { SubscriptionEntity } from './infrastructure/entities/subscription.entity';
 import { EtablissementSubscriptionsController } from './presentation/etablissement-subscriptions.controller';
 import { SubscriptionsController } from './presentation/subscriptions.controller';
@@ -23,7 +24,7 @@ import { SubscriptionsController } from './presentation/subscriptions.controller
     MailModule,
   ],
   controllers: [SubscriptionsController, EtablissementSubscriptionsController],
-  providers: [SubscriptionsService, SubscriptionLifecycleService, PlanFeatureGuard],
-  exports: [SubscriptionsService, PlanFeatureGuard],
+  providers: [SubscriptionsService, SubscriptionLifecycleService, PlanFeatureGuard, PlanFeatureFlagGuard],
+  exports: [SubscriptionsService, PlanFeatureGuard, PlanFeatureFlagGuard],
 })
 export class SubscriptionsModule {}

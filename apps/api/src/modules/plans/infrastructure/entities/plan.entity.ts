@@ -1,4 +1,4 @@
-import { ClinicalModule, PlanFeatures, PlanLimites, PlanTarifs } from '@sih-saas/shared';
+import { ModuleMetier, PlanFeatures, PlanLimites, PlanTarifs } from '@sih-saas/shared';
 import {
   Column,
   CreateDateColumn,
@@ -31,8 +31,8 @@ export class PlanEntity {
   @Column({ type: 'jsonb' })
   limites: PlanLimites;
 
-  @Column({ type: 'enum', enum: ClinicalModule, array: true, default: [] })
-  modules: ClinicalModule[];
+  @Column({ type: 'enum', enum: ModuleMetier, array: true, default: [] })
+  modules: ModuleMetier[];
 
   @Column({ type: 'jsonb' })
   features: PlanFeatures;
