@@ -10,6 +10,7 @@ import { AdmissionsLitsModule } from './modules/admissions-lits/admissions-lits.
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BlocOperatoireModule } from './modules/bloc-operatoire/bloc-operatoire.module';
 import { ConsultationsModule } from './modules/consultations/consultations.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { DossierMedicalModule } from './modules/dossier-medical/dossier-medical.module';
@@ -81,6 +82,7 @@ import { SharedModule } from './shared/shared.module';
     AdmissionsLitsModule,
     RendezVousModule,
     UrgencesModule,
+    BlocOperatoireModule,
     ConsultationsModule,
     PrescriptionsModule,
     PharmacieModule,
