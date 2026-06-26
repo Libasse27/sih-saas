@@ -31,6 +31,7 @@ import { PlansModule } from './modules/plans/plans.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { RendezVousModule } from './modules/rendez-vous/rendez-vous.module';
+import { RhModule } from './modules/rh/rh.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { SocialModule } from './modules/social/social.module';
 import { SterilisationModule } from './modules/sterilisation/sterilisation.module';
@@ -92,6 +93,7 @@ import { SharedModule } from './shared/shared.module';
     SterilisationModule,
     LogistiqueModule,
     SocialModule,
+    RhModule,
     PushNotificationsModule,
     MessagingModule,
   ],
