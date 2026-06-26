@@ -91,6 +91,11 @@ export async function findAllInterventions(
   return response.data.data;
 }
 
+export async function findIntervention(id: string): Promise<Intervention> {
+  const response = await api.get<ApiResponse<Intervention>>(`/interventions/${id}`);
+  return response.data.data;
+}
+
 export async function createIntervention(dto: CreateInterventionDto): Promise<Intervention> {
   const response = await api.post<ApiResponse<Intervention>>('/interventions', dto);
   return response.data.data;
