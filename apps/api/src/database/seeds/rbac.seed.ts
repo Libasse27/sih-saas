@@ -69,6 +69,10 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.LIT_VIEW,
     Permission.MESSAGE_SEND,
     Permission.MESSAGE_READ,
+    Permission.BLOC_PLANIFICATION,
+    Permission.BLOC_VIEW,
+    Permission.BLOC_REALISATION,
+    Permission.BLOC_COMPTE_RENDU,
   ],
   [Role.INFIRMIER]: [
     Permission.DOSSIER_READ,
@@ -81,6 +85,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.URGENCE_ALERTE,
     Permission.MESSAGE_SEND,
     Permission.MESSAGE_READ,
+    Permission.BLOC_VIEW,
+    Permission.BLOC_REALISATION,
   ],
   [Role.ANESTHESISTE]: [
     Permission.PATIENT_READ,
@@ -96,6 +102,9 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.LIT_VIEW,
     Permission.MESSAGE_SEND,
     Permission.MESSAGE_READ,
+    Permission.BLOC_PLANIFICATION,
+    Permission.BLOC_VIEW,
+    Permission.BLOC_REALISATION,
   ],
   [Role.SAGE_FEMME]: [
     Permission.DOSSIER_READ,
