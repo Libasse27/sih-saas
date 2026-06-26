@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/application/audit.service';
+import { RealtimeGateway } from '../../notifications/presentation/realtime.gateway';
 import { TenantContextService } from '../../../shared/tenant/tenant-context.service';
 import { ArticleStockEntity } from '../infrastructure/entities/article-stock.entity';
 import { CreateArticleStockDto } from '../presentation/dto/create-article-stock.dto';
@@ -20,6 +21,7 @@ export class LogistiqueService {
   constructor(
     private readonly tenantContext: TenantContextService,
     private readonly auditService: AuditService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   private get repository(): Repository<ArticleStockEntity> {
@@ -75,5 +77,35 @@ export class LogistiqueService {
     });
 
     return saved;
+  }
+
+  /**
+   * Décrément atomique : `UPDATE ... WHERE quantite >= $1` garantit qu'aucune utilisation
+   * concurrente ne peut faire passer la quantité sous zéro — même pattern que
+   * `StockMedicamentService.decrementer` (Phase 7). 0 ligne affectée = stock insuffisant.
+   */
+  async decrementer(articleStockId: string, quantite: number): Promise<ArticleStockEntity> {
+    const [lignes] = await this.repository.query(
+      `UPDATE clinic.articles_stock SET quantite = quantite - $1 WHERE id = $2 AND quantite >= $1 RETURNING id`,
+      [quantite, articleStockId],
+    );
+
+    if (!lignes.length) {
+      throw new ConflictException('Stock insuffisant pour cet article.');
+    }
+
+    const article = await this.findById(articleStockId);
+    if (article.quantite <= article.seuilAlerte) {
+      this.tenantContext.afterCommit(() => {
+        this.realtimeGateway.emitToEtablissement(article.etablissementId, 'stock:alerte', {
+          articleStockId: article.id,
+          nom: article.nom,
+          quantite: article.quantite,
+          seuilAlerte: article.seuilAlerte,
+        });
+      });
+    }
+
+    return article;
   }
 }
