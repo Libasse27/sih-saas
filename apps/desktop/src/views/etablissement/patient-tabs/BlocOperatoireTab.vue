@@ -42,9 +42,15 @@ async function charger(): Promise<void> {
   try {
     const res = await blocService.findAllInterventions(1, 50, { patientId: props.patientId });
     interventions.value = res.items;
-  } catch {
-    // 403 : CareContextGuard — aucun lien de soin actif avec ce patient
-    lectureRefusee.value = true;
+  } catch (err: unknown) {
+    const status = (err as { response?: { status?: number } }).response?.status;
+    if (status === 403) {
+      // 403 : permission BLOC_VIEW insuffisante
+      lectureRefusee.value = true;
+    } else {
+      // Réseau / erreur serveur — laisser remonter à l'intercepteur global ou afficher un toast
+      message.error('Erreur lors du chargement des interventions.');
+    }
   } finally {
     chargement.value = false;
   }
@@ -71,7 +77,7 @@ onMounted(charger);
       v-if="lectureRefusee"
       type="warning"
       show-icon
-      message="Aucun lien de soin actif avec ce patient — interventions non visibles."
+      message="Accès non autorisé au bloc opératoire — permissions insuffisantes."
       style="margin-bottom: 16px"
     />
 

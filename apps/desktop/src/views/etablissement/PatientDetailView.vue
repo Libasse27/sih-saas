@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Sexe } from '@sih-saas/shared';
+import { Permission, Sexe } from '@sih-saas/shared';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import * as patientsService from '../../services/patients.service';
 import type { Patient } from '../../services/patients.service';
+import { useAuthStore } from '../../stores/auth.store';
 import AdministrationTab from './patient-tabs/AdministrationTab.vue';
 import BlocOperatoireTab from './patient-tabs/BlocOperatoireTab.vue';
 import ConsentementsTab from './patient-tabs/ConsentementsTab.vue';
@@ -16,6 +17,7 @@ import PrescriptionsTab from './patient-tabs/PrescriptionsTab.vue';
 
 const props = defineProps<{ id: string }>();
 const router = useRouter();
+const auth = useAuthStore();
 
 const patient = ref<Patient | null>(null);
 const chargement = ref(true);
@@ -73,7 +75,7 @@ onMounted(charger);
         <a-tab-pane key="consentements" tab="Consentements">
           <ConsentementsTab :patient-id="patient.id" />
         </a-tab-pane>
-        <a-tab-pane key="bloc" tab="Bloc opératoire">
+        <a-tab-pane v-if="auth.aPermission(Permission.BLOC_VIEW)" key="bloc" tab="Bloc opératoire">
           <BlocOperatoireTab :patient-id="patient.id" />
         </a-tab-pane>
       </a-tabs>
