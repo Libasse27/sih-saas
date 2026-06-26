@@ -6,6 +6,7 @@ import { DossierMedicalModule } from '../dossier-medical/dossier-medical.module'
 import { LogistiqueModule } from '../logistique/logistique.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PatientsModule } from '../patients/patients.module';
+import { RendezVousModule } from '../rendez-vous/rendez-vous.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { InterventionsService } from './application/interventions.service';
 import { SallesOperationService } from './application/salles-operation.service';
@@ -32,6 +33,7 @@ import { SallesOperationController } from './presentation/salles-operation.contr
       ConsommableInterventionEntity,
     ]),
     PatientsModule,
+    RendezVousModule,
     AdmissionsLitsModule,
     LogistiqueModule,
     DossierMedicalModule,
