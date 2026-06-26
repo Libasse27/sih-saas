@@ -22,6 +22,10 @@ class FindInterventionsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   salleOperationId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  patientId?: string;
 }
 
 /**
@@ -53,6 +57,7 @@ export class InterventionsController {
     return this.interventionsService.findAll(query.page, query.limit, {
       statut: query.statut,
       salleOperationId: query.salleOperationId,
+      patientId: query.patientId,
     });
   }
 

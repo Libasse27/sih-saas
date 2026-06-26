@@ -122,7 +122,7 @@ export class InterventionsService {
   async findAll(
     page: number,
     limit: number,
-    filtres: { statut?: InterventionStatut; salleOperationId?: string } = {},
+    filtres: { statut?: InterventionStatut; salleOperationId?: string; patientId?: string } = {},
   ): Promise<PaginatedResult<InterventionEntity>> {
     const [items, total] = await this.repository.findAndCount({
       where: filtres,
