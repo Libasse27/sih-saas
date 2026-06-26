@@ -104,6 +104,18 @@ const router = createRouter({
           component: () => import('../views/etablissement/UrgencesView.vue'),
         },
         {
+          path: 'salles-operation',
+          name: 'etablissement-salles-operation',
+          component: () => import('../views/etablissement/SallesOperationView.vue'),
+          meta: { requiresAuth: true, scope: Scope.ETABLISSEMENT },
+        },
+        {
+          path: 'interventions',
+          name: 'etablissement-interventions',
+          component: () => import('../views/etablissement/InterventionsView.vue'),
+          meta: { requiresAuth: true, scope: Scope.ETABLISSEMENT },
+        },
+        {
           path: 'pharmacie',
           name: 'etablissement-pharmacie',
           component: () => import('../views/etablissement/PharmacieView.vue'),

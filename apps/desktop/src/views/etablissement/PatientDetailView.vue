@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import * as patientsService from '../../services/patients.service';
 import type { Patient } from '../../services/patients.service';
 import AdministrationTab from './patient-tabs/AdministrationTab.vue';
+import BlocOperatoireTab from './patient-tabs/BlocOperatoireTab.vue';
 import ConsentementsTab from './patient-tabs/ConsentementsTab.vue';
 import ConsultationsTab from './patient-tabs/ConsultationsTab.vue';
 import DossierMedicalTab from './patient-tabs/DossierMedicalTab.vue';
@@ -71,6 +72,9 @@ onMounted(charger);
         </a-tab-pane>
         <a-tab-pane key="consentements" tab="Consentements">
           <ConsentementsTab :patient-id="patient.id" />
+        </a-tab-pane>
+        <a-tab-pane key="bloc" tab="Bloc opératoire">
+          <BlocOperatoireTab :patient-id="patient.id" />
         </a-tab-pane>
       </a-tabs>
     </a-spin>

@@ -65,6 +65,10 @@ const menuItems = computed(() => {
   if (auth.aPermission(Permission.URGENCE_VIEW)) {
     items.push({ key: 'etablissement-urgences', label: 'Urgences', icon: AlertOutlined });
   }
+  if (auth.aPermission(Permission.BLOC_VIEW) || auth.aPermission(Permission.BLOC_PLANIFICATION)) {
+    items.push({ key: 'etablissement-salles-operation', label: 'Bloc opératoire', icon: MedicineBoxOutlined });
+    items.push({ key: 'etablissement-interventions', label: 'Planning bloc', icon: MedicineBoxOutlined });
+  }
   if (auth.aPermission(Permission.STOCK_VIEW) || auth.aPermission(Permission.STOCK_MANAGE) || auth.aPermission(Permission.DISPENSATION_CREATE)) {
     items.push({ key: 'etablissement-pharmacie', label: 'Pharmacie', icon: ExperimentOutlined });
   }
