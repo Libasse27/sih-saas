@@ -8,6 +8,7 @@ import { TenantContextService } from '../../../shared/tenant/tenant-context.serv
 import { PaiementPatientEntity } from '../infrastructure/entities/paiement-patient.entity';
 import { CreatePaiementPatientDto } from '../presentation/dto/create-paiement-patient.dto';
 import { FacturesPatientService } from './factures-patient.service';
+import { ComptabiliteService } from '../../comptabilite/application/comptabilite.service';
 
 export interface CreatePaiementPatientResult {
   paiement: PaiementPatientEntity;
@@ -42,6 +43,7 @@ export class PaiementsPatientService {
     private readonly facturesPatientService: FacturesPatientService,
     private readonly gatewayRegistry: PaymentGatewayRegistry,
     private readonly auditService: AuditService,
+    private readonly comptabiliteService: ComptabiliteService,
   ) {}
 
   private get repository(): Repository<PaiementPatientEntity> {
@@ -85,6 +87,7 @@ export class PaiementsPatientService {
 
     if (estEspece) {
       await this.recalculerFacture(facturePatientId);
+      await this.comptabiliteService.genererEcritureEncaissement(paiement);
       return { paiement };
     }
 
@@ -151,6 +154,7 @@ export class PaiementsPatientService {
 
     if (paiement.statut === PaymentStatut.REUSSI) {
       await this.recalculerFacture(paiement.facturePatientId);
+      await this.comptabiliteService.genererEcritureEncaissement(paiement);
     }
   }
 

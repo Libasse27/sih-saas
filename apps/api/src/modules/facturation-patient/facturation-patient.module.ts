@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from '../audit/audit.module';
+import { ComptabiliteModule } from '../comptabilite/comptabilite.module';
 import { EtablissementsModule } from '../etablissements/etablissements.module';
 import { PatientsModule } from '../patients/patients.module';
 import { PaymentsModule } from '../payments/payments.module';
@@ -28,6 +29,7 @@ import { PaiementsPatientController } from './presentation/paiements-patient.con
     PatientsModule,
     // PaymentGatewayRegistry (infra partagée avec le flux abonnement, jamais PaymentsService/PaymentEntity).
     PaymentsModule,
+    ComptabiliteModule,
   ],
   controllers: [
     AssurancesController,

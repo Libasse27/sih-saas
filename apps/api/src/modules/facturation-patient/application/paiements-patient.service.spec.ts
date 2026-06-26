@@ -9,6 +9,7 @@ describe('PaiementsPatientService', () => {
   let gateway: { initier: jest.Mock; verifierWebhook: jest.Mock; extraireStatutPaiement: jest.Mock };
   let registry: { get: jest.Mock };
   let auditService: { log: jest.Mock };
+  let comptabiliteService: { genererEcritureEncaissement: jest.Mock };
   let service: PaiementsPatientService;
 
   beforeEach(() => {
@@ -34,8 +35,9 @@ describe('PaiementsPatientService', () => {
     };
     registry = { get: jest.fn().mockReturnValue(gateway) };
     auditService = { log: jest.fn() };
+    comptabiliteService = { genererEcritureEncaissement: jest.fn().mockResolvedValue(undefined) };
 
-    service = new PaiementsPatientService(tenantContext as any, facturesPatientService as any, registry as any, auditService as any);
+    service = new PaiementsPatientService(tenantContext as any, facturesPatientService as any, registry as any, auditService as any, comptabiliteService as any);
   });
 
   describe('create', () => {
