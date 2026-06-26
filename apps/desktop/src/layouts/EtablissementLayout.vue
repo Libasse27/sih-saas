@@ -13,6 +13,7 @@ import {
   SafetyOutlined,
   ShopOutlined,
   SmileOutlined,
+  SolutionOutlined,
   TeamOutlined,
   ToolOutlined,
 } from '@ant-design/icons-vue';
@@ -101,6 +102,9 @@ const menuItems = computed(() => {
   }
   if (auth.aPermission(Permission.SOCIAL_MANAGE) || auth.aPermission(Permission.DOSSIER_READ)) {
     items.push({ key: 'etablissement-social', label: 'Social', icon: SmileOutlined });
+  }
+  if (auth.aPermission(Permission.RH_VIEW) || auth.aPermission(Permission.RH_MANAGE)) {
+    items.push({ key: 'etablissement-rh', label: 'Ressources humaines', icon: SolutionOutlined });
   }
   if (auth.aPermission(Permission.API_KEY_MANAGE)) {
     items.push({ key: 'etablissement-api-keys', label: 'Clés API', icon: KeyOutlined });

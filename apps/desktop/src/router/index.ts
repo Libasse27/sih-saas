@@ -166,6 +166,12 @@ const router = createRouter({
           component: () => import('../views/etablissement/LogistiqueListView.vue'),
         },
         {
+          path: 'rh',
+          name: 'etablissement-rh',
+          component: () => import('../views/etablissement/RhView.vue'),
+          meta: { requiresAuth: true, scope: Scope.ETABLISSEMENT },
+        },
+        {
           path: 'social',
           name: 'etablissement-social',
           component: () => import('../views/etablissement/SocialView.vue'),
