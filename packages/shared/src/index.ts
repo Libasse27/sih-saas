@@ -17,6 +17,7 @@ export * from './enums/consentement.enum';
 export * from './enums/cdp.enum';
 export * from './enums/urgence.enum';
 export * from './enums/rh.enum';
+export * from './enums/bloc-operatoire.enum';
 export * from './types/api-response';
 export * from './types/jwt-payload';
 export * from './types/plan';

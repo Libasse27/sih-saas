@@ -84,6 +84,12 @@ export enum Permission {
   // (une conversation est identifiée par son propre id), donc jamais 🩺/CareContextGuard.
   MESSAGE_SEND = 'message:send',
   MESSAGE_READ = 'message:read',
+
+  // Bloc opératoire (prompt maître §10.4)
+  BLOC_PLANIFICATION = 'bloc:planification',
+  BLOC_VIEW = 'bloc:view',
+  BLOC_REALISATION = 'bloc:realisation', // 🩺
+  BLOC_COMPTE_RENDU = 'bloc:compte-rendu', // 🩺
 }
 
 /** Effet d'un override ponctuel dans user_permissions (matrice-rbac.md §0 — table user_permissions). */
@@ -105,4 +111,6 @@ export const CARE_CONTEXT_PERMISSIONS: ReadonlySet<Permission> = new Set([
   Permission.URGENCE_PRISE_EN_CHARGE,
   Permission.URGENCE_SURVEILLANCE,
   Permission.URGENCE_ALERTE,
+  Permission.BLOC_REALISATION,
+  Permission.BLOC_COMPTE_RENDU,
 ]);
