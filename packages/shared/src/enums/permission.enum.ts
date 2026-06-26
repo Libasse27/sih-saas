@@ -90,6 +90,11 @@ export enum Permission {
   BLOC_VIEW = 'bloc:view',
   BLOC_REALISATION = 'bloc:realisation', // 🩺
   BLOC_COMPTE_RENDU = 'bloc:compte-rendu', // 🩺
+
+  // Comptabilité SYSCOHADA (Phase 37)
+  COMPTA_JOURNAL_READ = 'compta:journal:read',
+  COMPTA_JOURNAL_WRITE = 'compta:journal:write',
+  COMPTA_BILAN_READ = 'compta:bilan:read',
 }
 
 /** Effet d'un override ponctuel dans user_permissions (matrice-rbac.md §0 — table user_permissions). */

@@ -21,6 +21,9 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.AUDIT_READ_LOCAL,
     Permission.API_KEY_MANAGE,
     Permission.RH_VIEW,
+    Permission.COMPTA_JOURNAL_READ,
+    Permission.COMPTA_JOURNAL_WRITE,
+    Permission.COMPTA_BILAN_READ,
   ],
   [Role.DIRECTEUR]: [
     Permission.UTILISATEUR_MANAGE,
@@ -30,6 +33,9 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.AUDIT_READ_LOCAL,
     Permission.API_KEY_MANAGE,
     Permission.RH_VIEW,
+    Permission.COMPTA_JOURNAL_READ,
+    Permission.COMPTA_JOURNAL_WRITE,
+    Permission.COMPTA_BILAN_READ,
   ],
   [Role.ADMIN_SYSTEME]: [Permission.UTILISATEUR_MANAGE, Permission.ETABLISSEMENT_SETTINGS],
   [Role.MEDECIN]: [
@@ -170,6 +176,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // n'était seedée à AUCUN rôle (bug découvert Phase 17) — le caissier est l'acteur naturel,
     // même périmètre que le suivi des créances assurance (CreancesAssuranceController).
     Permission.ASSURANCE_MANAGE,
+    Permission.COMPTA_JOURNAL_READ,
   ],
   [Role.GESTIONNAIRE_LITS]: [Permission.LIT_VIEW, Permission.LIT_ASSIGN, Permission.LIT_LIBERER],
   [Role.ASSISTANT_SOCIAL]: [Permission.SOCIAL_MANAGE, Permission.DOSSIER_READ],
