@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { BlocOperatoireModule } from './modules/bloc-operatoire/bloc-operatoire.module';
 import { ConsultationsModule } from './modules/consultations/consultations.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
+import { DashboardEtablissementModule } from './modules/dashboard-etablissement/dashboard-etablissement.module';
 import { DossierMedicalModule } from './modules/dossier-medical/dossier-medical.module';
 import { EtablissementsModule } from './modules/etablissements/etablissements.module';
 import { FacturationPatientModule } from './modules/facturation-patient/facturation-patient.module';
@@ -84,6 +85,7 @@ import { SharedModule } from './shared/shared.module';
     UrgencesModule,
     BlocOperatoireModule,
     ConsultationsModule,
+    DashboardEtablissementModule,
     PrescriptionsModule,
     PharmacieModule,
     LaboratoireModule,
