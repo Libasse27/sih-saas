@@ -378,6 +378,7 @@ onUnmounted(() => {
           placeholder="Rechercher le patient par IDH"
           enter-button="Rechercher"
           :loading="rechercheEnCours"
+          data-cy="urgence-idh-search"
           @search="rechercherPatient"
         />
       </template>
@@ -389,9 +390,9 @@ onUnmounted(() => {
           style="margin-bottom: 16px"
         />
         <a-form layout="vertical">
-          <a-form-item label="Motif"><a-input v-model:value="formulaireCreation.motif" /></a-form-item>
+          <a-form-item label="Motif"><a-input v-model:value="formulaireCreation.motif" data-cy="urgence-modal-motif" /></a-form-item>
           <a-form-item label="Niveau de triage">
-            <a-select v-model:value="formulaireCreation.niveauTriage">
+            <a-select v-model:value="formulaireCreation.niveauTriage" data-cy="urgence-modal-niveau">
               <a-select-option v-for="niveau in Object.values(NiveauTriage)" :key="niveau" :value="niveau">
                 {{ LIBELLE_NIVEAU[niveau as NiveauTriage] }}
               </a-select-option>

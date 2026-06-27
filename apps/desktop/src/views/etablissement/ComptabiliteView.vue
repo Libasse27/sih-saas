@@ -126,11 +126,12 @@ onMounted(() => {
           <a-button @click="chargerJournal" :loading="chargementJournal">Filtrer</a-button>
         </a-col>
         <a-col flex="auto" style="text-align: right">
-          <a-button v-if="peutEcrire" type="primary" @click="modalOd = true">Saisir une OD</a-button>
+          <a-button v-if="peutEcrire" type="primary" data-cy="compta-btn-saisir-od" @click="modalOd = true">Saisir une OD</a-button>
         </a-col>
       </a-row>
 
       <a-table
+        data-cy="compta-table-journal"
         :data-source="ecritures"
         :columns="colonnesJournal"
         :loading="chargementJournal"
@@ -151,6 +152,7 @@ onMounted(() => {
         Actualiser
       </a-button>
       <a-table
+        data-cy="compta-table-balance"
         :data-source="balance"
         :columns="colonnesBalance"
         :loading="chargementBalance"
@@ -175,29 +177,29 @@ onMounted(() => {
         <a-input v-model:value="formOd.date" type="date" />
       </a-form-item>
       <a-form-item label="Libellé">
-        <a-input v-model:value="formOd.libelle" placeholder="Description de l'opération" />
+        <a-input v-model:value="formOd.libelle" placeholder="Description de l'opération" data-cy="od-libelle" />
       </a-form-item>
       <a-row :gutter="8">
         <a-col :span="12">
           <a-form-item label="Compte débité (code)">
-            <a-input v-model:value="formOd.compteDebitCode" placeholder="ex: 411" />
+            <a-input v-model:value="formOd.compteDebitCode" placeholder="ex: 411" data-cy="od-compte-debit" />
           </a-form-item>
         </a-col>
         <a-col :span="12">
           <a-form-item label="Montant débit (FCFA)">
-            <a-input-number v-model:value="formOd.montantDebit" :min="1" style="width: 100%" />
+            <a-input-number v-model:value="formOd.montantDebit" :min="1" style="width: 100%" data-cy="od-montant-debit" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="8">
         <a-col :span="12">
           <a-form-item label="Compte crédité (code)">
-            <a-input v-model:value="formOd.compteCreditCode" placeholder="ex: 706" />
+            <a-input v-model:value="formOd.compteCreditCode" placeholder="ex: 706" data-cy="od-compte-credit" />
           </a-form-item>
         </a-col>
         <a-col :span="12">
           <a-form-item label="Montant crédit (FCFA)">
-            <a-input-number v-model:value="formOd.montantCredit" :min="1" style="width: 100%" />
+            <a-input-number v-model:value="formOd.montantCredit" :min="1" style="width: 100%" data-cy="od-montant-credit" />
           </a-form-item>
         </a-col>
       </a-row>

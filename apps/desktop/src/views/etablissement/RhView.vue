@@ -409,9 +409,10 @@ onMounted(chargerEmployes);
       <a-tab-pane key="employes" tab="Employés">
         <div class="entete">
           <span />
-          <a-button v-if="peutGerer" type="primary" @click="ouvrirCreationEmploye">Nouvel employé</a-button>
+          <a-button v-if="peutGerer" type="primary" data-cy="rh-btn-nouvel-employe" @click="ouvrirCreationEmploye">Nouvel employé</a-button>
         </div>
         <a-table
+          data-cy="rh-table-employes"
           :columns="colonnesEmployes"
           :data-source="employes"
           :loading="chargementEmployes"
@@ -533,11 +534,11 @@ onMounted(chargerEmployes);
 
     <a-modal v-model:open="modalEmployeOuvert" :title="editEmployeId ? 'Modifier l\'employé' : 'Nouvel employé'" :confirm-loading="enregistrementEmploye" @ok="soumettreEmploye">
       <a-form layout="vertical">
-        <a-form-item label="Matricule"><a-input v-model:value="formulaireEmploye.matricule" placeholder="EMP-001" /></a-form-item>
-        <a-form-item label="Nom"><a-input v-model:value="formulaireEmploye.nom" /></a-form-item>
-        <a-form-item label="Prénom"><a-input v-model:value="formulaireEmploye.prenom" /></a-form-item>
-        <a-form-item label="Poste"><a-input v-model:value="formulaireEmploye.poste" placeholder="Infirmier chef" /></a-form-item>
-        <a-form-item label="Date d'embauche"><a-input v-model:value="formulaireEmploye.dateEmbauche" type="date" /></a-form-item>
+        <a-form-item label="Matricule"><a-input v-model:value="formulaireEmploye.matricule" placeholder="EMP-001" data-cy="rh-modal-matricule" /></a-form-item>
+        <a-form-item label="Nom"><a-input v-model:value="formulaireEmploye.nom" data-cy="rh-modal-nom" /></a-form-item>
+        <a-form-item label="Prénom"><a-input v-model:value="formulaireEmploye.prenom" data-cy="rh-modal-prenom" /></a-form-item>
+        <a-form-item label="Poste"><a-input v-model:value="formulaireEmploye.poste" placeholder="Infirmier chef" data-cy="rh-modal-poste" /></a-form-item>
+        <a-form-item label="Date d'embauche"><a-input v-model:value="formulaireEmploye.dateEmbauche" type="date" data-cy="rh-modal-date-embauche" /></a-form-item>
         <a-form-item label="Téléphone (optionnel)"><a-input v-model:value="formulaireEmploye.telephone" placeholder="+221 77 000 00 00" /></a-form-item>
         <a-form-item label="Email (optionnel)"><a-input v-model:value="formulaireEmploye.email" /></a-form-item>
       </a-form>
