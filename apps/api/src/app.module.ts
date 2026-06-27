@@ -11,6 +11,7 @@ import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BlocOperatoireModule } from './modules/bloc-operatoire/bloc-operatoire.module';
+import { ComptabiliteModule } from './modules/comptabilite/comptabilite.module';
 import { ConsultationsModule } from './modules/consultations/consultations.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { DashboardEtablissementModule } from './modules/dashboard-etablissement/dashboard-etablissement.module';
@@ -84,6 +85,7 @@ import { SharedModule } from './shared/shared.module';
     RendezVousModule,
     UrgencesModule,
     BlocOperatoireModule,
+    ComptabiliteModule,
     ConsultationsModule,
     DashboardEtablissementModule,
     PrescriptionsModule,
