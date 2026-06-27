@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  AccountBookOutlined,
   AlertOutlined,
   CalendarOutlined,
   DashboardOutlined,
@@ -105,6 +106,9 @@ const menuItems = computed(() => {
   }
   if (auth.aPermission(Permission.RH_VIEW) || auth.aPermission(Permission.RH_MANAGE)) {
     items.push({ key: 'etablissement-rh', label: 'Ressources humaines', icon: SolutionOutlined });
+  }
+  if (auth.aPermission(Permission.COMPTA_JOURNAL_READ)) {
+    items.push({ key: 'etablissement-comptabilite', label: 'Comptabilité', icon: AccountBookOutlined });
   }
   if (auth.aPermission(Permission.API_KEY_MANAGE)) {
     items.push({ key: 'etablissement-api-keys', label: 'Clés API', icon: KeyOutlined });

@@ -172,6 +172,12 @@ const router = createRouter({
           meta: { requiresAuth: true, scope: Scope.ETABLISSEMENT },
         },
         {
+          path: 'comptabilite',
+          name: 'etablissement-comptabilite',
+          component: () => import('../views/etablissement/ComptabiliteView.vue'),
+          meta: { requiresAuth: true, scope: Scope.ETABLISSEMENT },
+        },
+        {
           path: 'social',
           name: 'etablissement-social',
           component: () => import('../views/etablissement/SocialView.vue'),
